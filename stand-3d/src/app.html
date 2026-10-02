@@ -1,0 +1,1691 @@
+<title>Stand Flora &amp; Co</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout : atelier de maquettiste — panneau de travail à gauche, maquette 3D à droite, cotes en chiffres mono */
+:root {
+  --bg: #ece7e3;
+  --surface: #faf8f6;
+  --surface-2: #f2ede9;
+  --ink: #2a211d;
+  --muted: #73665d;
+  --line: #dcd2ca;
+  --accent: #6d2131;
+  --accent-ink: #ffffff;
+  --camel: #9c6634;
+  --ok: #2e7550;
+  --warn: #9a5c00;
+  --bad: #b3261e;
+  --ok-bg: #e3efe7;
+  --warn-bg: #f6ead6;
+  --bad-bg: #f7e2df;
+  --f-display: "Marcellus", "Didot", "Times New Roman", serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161211; --surface: #201a18; --surface-2: #2a2220; --ink: #f0e7e1; --muted: #a8988e; --line: #3b312d;
+    --accent: #e3909f; --accent-ink: #26090f; --camel: #dba56f; --ok: #73c995; --warn: #eaa848; --bad: #f2867c;
+    --ok-bg: #1d2e24; --warn-bg: #33270f; --bad-bg: #3a1c1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161211; --surface: #201a18; --surface-2: #2a2220; --ink: #f0e7e1; --muted: #a8988e; --line: #3b312d;
+  --accent: #e3909f; --accent-ink: #26090f; --camel: #dba56f; --ok: #73c995; --warn: #eaa848; --bad: #f2867c;
+  --ok-bg: #1d2e24; --warn-bg: #33270f; --bad-bg: #3a1c1a; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  grid-template-areas: "panel stage";
+  gap: 12px;
+  padding: 12px 16px;
+}
+.stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; border-radius: var(--r); overflow: hidden; background: #d9d4cf; border: 1px solid var(--line); }
+.view { position: absolute; inset: 0; touch-action: none; }
+.view canvas { display: block; width: 100%; height: 100%; }
+.panel { grid-area: panel; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "panel"; }
+  .stage { height: 60vh; min-height: 340px; }
+  .panel { overflow: visible; }
+  .panes { overflow: visible !important; }
+}
+
+/* Brand */
+.brand { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--f-display); font-weight: 400; font-size: 22px; letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.brand p { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Contrôles */
+.checks { padding: 10px 16px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.kpi { border-radius: 8px; padding: 6px 8px; background: var(--surface-2); border: 1px solid transparent; min-width: 0; }
+.kpi .k { display: block; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.kpi .v { display: block; font-family: var(--f-mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi.ok { background: var(--ok-bg); } .kpi.ok .v { color: var(--ok); }
+.kpi.bad { background: var(--bad-bg); border-color: color-mix(in srgb, var(--bad) 35%, transparent); } .kpi.bad .v { color: var(--bad); }
+.kpi.warn { background: var(--warn-bg); } .kpi.warn .v { color: var(--warn); }
+.issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 120px; overflow: auto; }
+.issues li { font-size: 12.5px; padding: 4px 8px; border-radius: 6px; display: flex; gap: 6px; align-items: baseline; }
+.issues li::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; transform: translateY(-1px); }
+.issues li.bad { color: var(--bad); background: var(--bad-bg); }
+.issues li.warn { color: var(--warn); background: var(--warn-bg); }
+.issues li.ok { color: var(--ok); background: var(--ok-bg); }
+
+/* Onglets */
+.tabs { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs button { flex: none; border: 0; background: none; padding: 8px 10px 9px; font-weight: 600; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.panes { flex: 1; min-height: 0; overflow: auto; }
+.pane { padding: 14px 16px 22px; display: grid; gap: 16px; align-content: start; }
+.pane h2 { font-family: var(--f-display); font-weight: 400; font-size: 17px; margin: 0; letter-spacing: .02em; }
+.pane h3 { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.lead { margin: 0; color: var(--muted); font-size: 13px; }
+.group { display: grid; gap: 8px; }
+
+/* Catalogue */
+.cat { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.cat button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px; min-width: 0; }
+.cat button:hover { border-color: var(--accent); }
+.cat .n { font-weight: 600; font-size: 13px; line-height: 1.25; }
+.cat .d { font-family: var(--f-mono); font-size: 11.5px; color: var(--camel); font-variant-numeric: tabular-nums; }
+.cat .p { font-size: 11.5px; color: var(--muted); }
+
+/* Formulaires */
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px 10px; }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label, .lbl { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.field input[type="number"], .field input[type="text"], .field select, textarea {
+  width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+}
+.field input[type="number"] { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+textarea { font-family: var(--f-mono); font-size: 11.5px; min-height: 80px; resize: vertical; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatches button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); padding: 0; }
+.swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 6px 11px; font-weight: 600; font-size: 13px; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); }
+.btn.small { padding: 4px 8px; font-size: 12px; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+.chip { display: inline-block; font-family: var(--f-mono); font-size: 12px; padding: 2px 7px; border-radius: 999px; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+
+/* Liste des éléments */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.list button { width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 6px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; }
+.list button:hover { background: var(--surface-2); }
+.list button[aria-current="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.list .nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .dm { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.list .flag { color: var(--bad); font-weight: 700; }
+
+/* Modèles */
+.presets { display: grid; gap: 8px; }
+.preset { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.preset strong { font-weight: 600; font-size: 13.5px; }
+.preset p { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+/* Photos */
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.photos button { border: 0; padding: 0; background: none; text-align: left; display: grid; gap: 4px; }
+.photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; display: block; }
+.photos span { font-size: 12px; color: var(--muted); }
+
+/* Barre de vues + sélection */
+.vbar { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 4px; pointer-events: none; }
+.vbar button { pointer-events: auto; border: 0; border-radius: 999px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,.88); color: #2a211d; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.vbar button[aria-pressed="true"] { background: #6d2131; color: #fff; }
+.selbar { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; pointer-events: none; }
+.selbar > * { pointer-events: auto; }
+.selbar .nm { background: rgba(42,33,29,.88); color: #fff; padding: 6px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.selbar button { border: 0; border-radius: 999px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,.92); color: #2a211d; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.selbar button.del { color: #b3261e; }
+.hint { position: absolute; left: 12px; bottom: 12px; margin: 0; font-size: 11.5px; color: #3d3430; background: rgba(255,255,255,.75); padding: 4px 8px; border-radius: 6px; max-width: calc(100% - 24px); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 18px; color: #3d3430; }
+
+/* Fenêtre */
+.modal { position: fixed; inset: 0; background: rgba(15,10,8,.72); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.modal .box { background: var(--surface); border-radius: var(--r); padding: 14px; max-width: min(1100px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 10px; }
+.modal img { max-width: 100%; max-height: 72vh; border-radius: 6px; display: block; margin: 0 auto; }
+.modal .row { justify-content: space-between; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <section class="stage" aria-label="Maquette 3D du stand">
+    <div id="view" class="view"></div>
+    <div class="loading" id="loading">Chargement de la galerie…</div>
+    <div class="vbar" role="toolbar" aria-label="Points de vue">
+      <button type="button" data-view="3d" aria-pressed="true">3D</button>
+      <button type="button" data-view="plan" aria-pressed="false">Plan</button>
+      <button type="button" data-view="client" aria-pressed="false">Vue cliente</button>
+      <button type="button" data-view="carrefour" aria-pressed="false">Depuis Carrefour</button>
+      <button type="button" data-view="passage" aria-pressed="false">Passage chariots</button>
+    </div>
+    <p class="hint" id="hint">Glissez un meuble pour le déplacer · glissez le vide pour tourner · molette ou pincement pour zoomer</p>
+    <div class="selbar" id="selbar" hidden>
+      <span class="nm" id="selName"></span>
+      <button type="button" id="sbRotL" title="Pivoter de 15°">↺ 15°</button>
+      <button type="button" id="sbRot" title="Pivoter de 90°">↻ 90°</button>
+      <button type="button" id="sbDup">Dupliquer</button>
+      <button type="button" id="sbDel" class="del">Supprimer</button>
+      <button type="button" id="sbClose" aria-label="Désélectionner">✕</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <header class="brand">
+      <h1>Stand Flora &amp; Co</h1>
+      <p>Maquette · galerie · décembre</p>
+    </header>
+    <div class="checks" id="checks" aria-live="polite"></div>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="add" aria-selected="true">Ajouter</button>
+      <button type="button" role="tab" data-tab="item" aria-selected="false">Objet</button>
+      <button type="button" role="tab" data-tab="stand" aria-selected="false">Stand &amp; lieu</button>
+      <button type="button" role="tab" data-tab="models" aria-selected="false">Modèles</button>
+      <button type="button" role="tab" data-tab="photos" aria-selected="false">Photos</button>
+    </nav>
+    <div class="panes">
+      <div class="pane" data-pane="add" id="paneAdd"></div>
+      <div class="pane" data-pane="item" id="paneItem" hidden></div>
+      <div class="pane" data-pane="stand" id="paneStand" hidden></div>
+      <div class="pane" data-pane="models" id="paneModels" hidden></div>
+      <div class="pane" data-pane="photos" id="panePhotos" hidden></div>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="box">
+    <div class="row"><strong id="modalTitle"></strong><button type="button" class="btn small" id="modalClose">Fermer</button></div>
+    <img id="modalImg" alt="">
+    <p class="note" id="modalNote"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(() => {
+'use strict';
+if (typeof THREE === 'undefined' || !THREE.OrbitControls) {
+  document.getElementById('loading').textContent = 'La 3D n’a pas pu se charger. Vérifiez la connexion puis rechargez la page.';
+  return;
+}
+const IMG = {
+  facade: "%%FACADE%%",
+  carrefour: "%%CARREFOUR%%",
+  photos: ["%%PHOTO1%%", "%%PHOTO2%%", "%%PHOTO3%%", "%%PHOTO4%%", "%%PHOTO5%%"],
+};
+const PHOTO_CAPTIONS = [
+  'Vue d’ensemble : Mister Minit, la vitrine bleue, Jeff de Bruges',
+  'La vitrine bleue de face (côté passage chariots)',
+  'L’allée de la galerie, Carrefour à gauche',
+  'L’emplacement vu depuis l’allée',
+  'En face du stand : les caisses Carrefour',
+];
+// Repères mesurés sur la photo 1 (pixels du recadrage de façade 2000 × 373)
+const FACADE_PX = { w: 2000, h: 373, bannerL: 729, bannerR: 1239 };
+const CARREFOUR_PX = { w: 2000, h: 430 };
+const LIMIT_H = 150; // cm
+const STORE_KEY = 'flora-stand-v1';
+const SLOTS_KEY = 'flora-stand-slots-v1';
+
+const $ = (s, r = document) => r.querySelector(s);
+const fmt = (n, d = 2) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DEG = Math.PI / 180;
+
+/* ---------- Matières et catalogue ---------- */
+const PALETTE = {
+  bois: { label: 'Bois clair', color: '#d2ae82', wood: true },
+  chene: { label: 'Chêne foncé', color: '#8d6545', wood: true },
+  creme: { label: 'Crème', color: '#ece2d2' },
+  blanc: { label: 'Blanc', color: '#f2f0ec' },
+  taupe: { label: 'Taupe', color: '#8d7e70' },
+  sauge: { label: 'Vert sauge', color: '#9aa58c' },
+  chocolat: { label: 'Chocolat', color: '#4b3326' },
+  bordeaux: { label: 'Bordeaux', color: '#5f1f2b' },
+  noir: { label: 'Noir mat', color: '#262221' },
+  dore: { label: 'Laiton doré', color: '#c9a254', metal: true },
+};
+const BAG_COLORS = ['#1f1b19', '#4c2d21', '#a9713f', '#8d7c6c', '#5d1f27', '#e2d4c0', '#6c4b36', '#2f2a33'];
+
+const P = {
+  bars: { key: 'bars', label: 'Barres', type: 'select', options: [[1, '1 barre'], [2, '2 barres']] },
+  spacing: { key: 'spacing', label: 'Écart entre sacs (cm)', type: 'number', min: 10, max: 60 },
+  faces: { key: 'faces', label: 'Faces', type: 'select', options: [[1, '1 face'], [2, '2 faces']] },
+  rows: { key: 'rows', label: 'Rangées de sacs', type: 'select', options: [[1, '1'], [2, '2'], [3, '3']] },
+  moulures: { key: 'moulures', label: 'Moulures haussmanniennes', type: 'bool' },
+  logo: { key: 'logo', label: 'Logo Flora & Co', type: 'bool' },
+  cols: { key: 'cols', label: 'Colonnes de cases', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4']] },
+  krows: { key: 'rows', label: 'Rangées de cases', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4']] },
+  steps: { key: 'steps', label: 'Marches', type: 'select', options: [[2, '2'], [3, '3'], [4, '4']] },
+};
+
+const CATALOG = {
+  rail: { name: 'Penderie / portant', group: 'Présentoirs à sacs', w: 120, d: 45, h: 145, color: 'dore', price: 45, params: { bars: 1, spacing: 16 }, schema: [P.bars, P.spacing], desc: 'Barre + crochets S, sacs suspendus' },
+  wall: { name: 'Mur de sacs', group: 'Présentoirs à sacs', w: 300, d: 30, h: 150, color: 'creme', price: 120, params: { faces: 1, rows: 3, spacing: 34, moulures: false }, schema: [P.faces, P.rows, P.spacing, P.moulures], desc: 'Panneau à crochets, 3 rangées' },
+  peg: { name: 'Panneau perforé sur pieds', group: 'Présentoirs à sacs', w: 120, d: 40, h: 145, color: 'bois', price: 60, params: { faces: 2 }, schema: [P.faces], desc: 'Pegboard, crochets déplaçables' },
+  kallax: { name: 'Étagère à cases (type Kallax)', group: 'Présentoirs à sacs', w: 77, d: 39, h: 77, color: 'blanc', price: 50, params: { cols: 2, rows: 2 }, schema: [P.cols, P.krows], desc: 'Cases de 33 cm, 1 sac par case' },
+  crate: { name: 'Caisse de vin 6 bouteilles', group: 'Présentoirs à sacs', w: 50, d: 18, h: 33, color: 'noir', price: 3, desc: 'Posée sur la tranche, ouverture devant · empilable' },
+  ladder: { name: 'Échelle déco', group: 'Présentoirs à sacs', w: 45, d: 35, h: 150, color: 'bois', price: 25, desc: 'Un sac par barreau' },
+  steps: { name: 'Gradins', group: 'Présentoirs à sacs', w: 120, d: 90, h: 90, color: 'creme', price: 70, params: { steps: 3 }, schema: [P.steps], desc: 'Marches en MDF peint' },
+  cube: { name: 'Cube / socle', group: 'Présentoirs à sacs', w: 40, d: 40, h: 40, color: 'creme', price: 15, desc: 'Pour la pièce phare · empilable' },
+  bust: { name: 'Porte-sac sur pied', group: 'Présentoirs à sacs', w: 30, d: 30, h: 120, color: 'dore', price: 20, desc: 'Un sac mis en valeur' },
+  counter: { name: 'Comptoir caisse', group: 'Mobilier', w: 120, d: 55, h: 100, color: 'bois', price: 90, params: { logo: true }, schema: [P.logo], desc: 'Caisse + paquets cadeaux' },
+  console: { name: 'Console', group: 'Mobilier', w: 110, d: 38, h: 80, color: 'noir', price: 40, desc: 'Plateau + tablette basse' },
+  table: { name: 'Guéridon rond', group: 'Mobilier', w: 60, d: 60, h: 70, color: 'dore', price: 30, desc: 'Ø 60 cm' },
+  storage: { name: 'Caisson de stock fermé', group: 'Mobilier', w: 80, d: 40, h: 80, color: 'creme', price: 40, desc: 'Réserve cachée · empilable' },
+  mirror: { name: 'Miroir sur pied', group: 'Mobilier', w: 45, d: 40, h: 150, color: 'dore', price: 35, desc: 'Indispensable pour essayer' },
+  panel: { name: 'Panneau plein / enseigne', group: 'Mobilier', w: 120, d: 30, h: 150, color: 'noir', price: 35, params: { logo: true, moulures: false }, schema: [P.logo, P.moulures], desc: 'Ferme un côté, porte le logo' },
+  rug: { name: 'Tapis', group: 'Déco', w: 280, d: 180, h: 1, color: 'creme', price: 40, desc: 'Délimite le stand' },
+  tree: { name: 'Sapin de Noël', group: 'Déco', w: 60, d: 60, h: 90, color: 'creme', price: 25, desc: 'Avec pot et boules dorées · empilable' },
+  cart: { name: 'Chariot (repère)', group: 'Repères d’échelle', w: 56, d: 95, h: 100, color: 'noir', price: 0, ref: true, desc: 'Pour tester le passage' },
+  person: { name: 'Personne 1,65 m (repère)', group: 'Repères d’échelle', w: 45, d: 30, h: 165, color: 'noir', price: 0, ref: true, desc: 'Pour juger des hauteurs' },
+};
+const STACK_SOURCES = new Set(['crate', 'cube', 'kallax', 'storage', 'tree', 'bust']);
+const STACK_TARGETS = new Set(['crate', 'cube', 'kallax', 'storage', 'counter', 'console', 'table']);
+
+/* ---------- État ---------- */
+const DEFAULT_STATE = () => ({
+  stand: { w: 3, d: 2, x: 0, passage: 1.5, passageMin: 1.4 },
+  env: { banner: 4.6, aisle: 9 },
+  opts: { bags: true, limit: true, ceiling: true, snap: true },
+  items: [],
+});
+let state = DEFAULT_STATE();
+let nextId = 1;
+let selectedId = null;
+let viewMode = '3d';
+
+function kallaxDims(it) { it.w = 35 * (+it.params.cols || 2) + 7; it.h = 35 * (+it.params.rows || 2) + 7; it.d = 39; }
+function makeItem(type, over = {}) {
+  const c = CATALOG[type];
+  const it = {
+    id: nextId++, type, name: c.name, x: 0, z: 0, rot: 0, elev: 0, autoElev: true,
+    w: c.w, d: c.d, h: c.h, color: c.color, price: c.price, locked: type === 'rug',
+    params: Object.assign({}, c.params || {}, over.params || {}),
+  };
+  for (const k of ['name', 'x', 'z', 'rot', 'elev', 'w', 'd', 'h', 'color', 'price', 'locked', 'autoElev']) if (over[k] !== undefined) it[k] = over[k];
+  if (type === 'kallax') kallaxDims(it);
+  return it;
+}
+
+/* ---------- Géométrie 2D ---------- */
+function corners(it) {
+  const c = Math.cos(it.rot * DEG), s = Math.sin(it.rot * DEG), hw = it.w / 200, hd = it.d / 200;
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => {
+    const lx = a * hw, lz = b * hd;
+    return [it.x + lx * c + lz * s, it.z - lx * s + lz * c];
+  });
+}
+function bounds(it) {
+  const cs = corners(it);
+  return { x0: Math.min(...cs.map(p => p[0])), x1: Math.max(...cs.map(p => p[0])), z0: Math.min(...cs.map(p => p[1])), z1: Math.max(...cs.map(p => p[1])) };
+}
+function inside(px, pz, it, pad = 0) {
+  const c = Math.cos(it.rot * DEG), s = Math.sin(it.rot * DEG), dx = px - it.x, dz = pz - it.z;
+  const lx = dx * c - dz * s, lz = dx * s + dz * c;
+  return Math.abs(lx) <= it.w / 200 + pad && Math.abs(lz) <= it.d / 200 + pad;
+}
+function obbOverlap(a, b, tol = 0.01) {
+  const A = corners(a), B = corners(b);
+  for (const poly of [A, B]) {
+    for (let i = 0; i < 2; i++) {
+      const p = poly[i], q = poly[i + 1];
+      const ax = -(q[1] - p[1]), az = q[0] - p[0];
+      const len = Math.hypot(ax, az) || 1;
+      const nx = ax / len, nz = az / len;
+      const pa = A.map(v => v[0] * nx + v[1] * nz), pb = B.map(v => v[0] * nx + v[1] * nz);
+      if (Math.max(...pa) - tol <= Math.min(...pb) || Math.max(...pb) - tol <= Math.min(...pa)) return false;
+    }
+  }
+  return true;
+}
+const standRect = () => { const s = state.stand; return { x0: s.x - s.w / 2, x1: s.x + s.w / 2, z0: s.passage, z1: s.passage + s.d }; };
+const isRef = it => !!CATALOG[it.type].ref;
+const isFacade = it => !isRef(it) && bounds(it).z0 <= 0.06 && it.z < state.stand.passage;
+
+/* ---------- Empilement automatique ---------- */
+// pool : objets sur lesquels on peut se poser ; exclude : objets posés sur celui qu'on déplace
+function settle(it, pool = state.items, exclude = null) {
+  if (!it.autoElev) return;
+  if (!STACK_SOURCES.has(it.type)) { it.elev = 0; return; }
+  let e = 0;
+  for (const o of pool) {
+    if (o === it || (exclude && exclude.has(o)) || !STACK_TARGETS.has(o.type)) continue;
+    if (!inside(it.x, it.z, o, -0.005)) continue;
+    e = Math.max(e, o.elev + o.h);
+  }
+  it.elev = Math.round(e * 10) / 10;
+}
+function settleAll() {
+  const sorted = [...state.items].sort((a, b) => a.elev - b.elev || a.id - b.id);
+  const done = [];
+  for (const it of sorted) { settle(it, done); done.push(it); }
+}
+function stackedOn(it) {
+  const out = new Set(), queue = [it];
+  while (queue.length) {
+    const base = queue.pop();
+    for (const o of state.items) {
+      if (o === it || out.has(o)) continue;
+      if (o.elev >= base.elev + base.h - 0.5 && inside(o.x, o.z, base)) { out.add(o); queue.push(o); }
+    }
+  }
+  return out;
+}
+
+/* ---------- Three.js : scène ---------- */
+const host = $('#view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.78;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#e6e1dc');
+if (typeof THREE.RoomEnvironment === 'function') {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+}
+
+const persp = new THREE.PerspectiveCamera(50, 1, 0.05, 200);
+const ortho = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 100);
+let camera = persp;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc8, 0.3));
+const sun = new THREE.DirectionalLight(0xfff4e8, 0.8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.02;
+Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.5, far: 30 });
+scene.add(sun, sun.target);
+
+/* Textures procédurales */
+function canvasTex(w, h, draw, { repeat = null, srgb = true } = {}) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = maxAniso;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
+}
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+const marbleTex = canvasTex(1024, 1024, (g, W, H) => {
+  const r = rng(7);
+  const tones = ['#ebe5e0', '#e6ddd6', '#efe9e4', '#e2d6cf', '#e9e1da', '#ddd2ca', '#ece4de'];
+  const colW = W / 13; // ≈ 30 cm par lame sur 4 m
+  for (let c = 0; c < 13; c++) {
+    let y = -r() * 300;
+    while (y < H) {
+      const len = 220 + r() * 200;
+      g.fillStyle = tones[Math.floor(r() * tones.length)];
+      g.fillRect(c * colW, y, colW, len);
+      g.globalAlpha = 0.18;
+      for (let v = 0; v < 3; v++) {
+        g.strokeStyle = r() > .5 ? '#a99c93' : '#c9b6ab';
+        g.lineWidth = 0.6 + r() * 1.4;
+        g.beginPath();
+        let vx = c * colW + r() * colW, vy = y + r() * len;
+        g.moveTo(vx, vy);
+        for (let k = 0; k < 4; k++) { vx += (r() - .5) * colW * .8; vy += (r() - .3) * 60; g.lineTo(Math.max(c * colW, Math.min((c + 1) * colW, vx)), vy); }
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+      g.fillStyle = '#cfc4bc'; g.fillRect(c * colW, y, colW, 1.5);
+      y += len;
+    }
+    g.fillStyle = '#d3c8c0'; g.fillRect(c * colW, 0, 1.5, H);
+  }
+}, { repeat: [15, 10] });
+
+const woodTex = canvasTex(256, 256, (g, W, H) => {
+  g.fillStyle = '#ececec'; g.fillRect(0, 0, W, H);
+  const r = rng(3);
+  for (let i = 0; i < 70; i++) {
+    g.strokeStyle = `rgba(90,70,50,${0.04 + r() * 0.08})`;
+    g.lineWidth = 0.5 + r() * 2;
+    g.beginPath();
+    const y = r() * H; g.moveTo(0, y);
+    for (let x = 0; x <= W; x += 32) g.lineTo(x, y + Math.sin(x / 40 + i) * 3 + (r() - .5) * 2);
+    g.stroke();
+  }
+}, { repeat: [1, 1] });
+
+const holesBase = canvasTex(32, 32, (g, W, H) => {
+  g.fillStyle = '#f0f0f0'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#5a5048'; g.beginPath(); g.arc(W / 2, H / 2, 4, 0, Math.PI * 2); g.fill();
+}, { repeat: [1, 1] });
+
+const stripesTex = canvasTex(64, 64, (g, W, H) => {
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = 'rgba(214,150,40,0.55)';
+  for (let i = -W; i < W * 2; i += 24) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 10, 0); g.lineTo(i + 10 - H, H); g.lineTo(i - H, H); g.closePath(); g.fill(); }
+}, { repeat: [1, 1] });
+
+function logoTex(bgHex) {
+  return canvasTex(1024, 256, (g, W, H) => {
+    g.fillStyle = bgHex; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#c9a254';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '400 112px Marcellus, Didot, serif';
+    g.fillText('FLORA & CO', W / 2, H * 0.44);
+    g.font = '500 34px Figtree, sans-serif';
+    g.fillText('P  A  R  I  S', W / 2, H * 0.82);
+  });
+}
+
+/* Matières */
+const matCache = new Map();
+function mat(key, opts = {}) {
+  const id = key + JSON.stringify(opts);
+  if (matCache.has(id)) return matCache.get(id);
+  const p = PALETTE[key] || PALETTE.creme;
+  const col = new THREE.Color(p.color);
+  if (opts.tint) col.lerp(new THREE.Color('#ffffff'), opts.tint);
+  if (opts.shade) col.lerp(new THREE.Color('#000000'), opts.shade);
+  const m = new THREE.MeshStandardMaterial({
+    color: col,
+    roughness: p.metal ? 0.32 : (p.wood ? 0.7 : 0.82),
+    metalness: p.metal ? 0.85 : 0,
+    map: p.wood ? woodTex : null,
+    envMapIntensity: p.metal ? 1.0 : 0.35,
+  });
+  matCache.set(id, m);
+  return m;
+}
+const bagMats = new Map();
+function bagMat(hex) {
+  if (!bagMats.has(hex)) bagMats.set(hex, new THREE.MeshStandardMaterial({ color: hex, roughness: 0.5, metalness: 0, envMapIntensity: 0.3 }));
+  return bagMats.get(hex);
+}
+const mirrorMat = new THREE.MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.04, metalness: 1, envMapIntensity: 1.3 });
+
+/* ---------- Environnement (photos) ---------- */
+const loader = new THREE.TextureLoader();
+function loadTex(src) {
+  return new Promise(res => loader.load(src, t => { t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso; res(t); }, undefined, () => res(null)));
+}
+let facadeTex = null, carrefourTex = null;
+const envGroup = new THREE.Group(); scene.add(envGroup);
+const ceilingGroup = new THREE.Group(); scene.add(ceilingGroup);
+
+function plane(w, h, material) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material); m.receiveShadow = true; return m; }
+function clearGroup(g) {
+  while (g.children.length) {
+    const c = g.children.pop();
+    c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.map && o.material.userData.own) o.material.map.dispose(); });
+  }
+}
+
+function buildEnv() {
+  clearGroup(envGroup); clearGroup(ceilingGroup);
+  const aisle = state.env.aisle;
+  const CEIL = 4.4;
+  // Sol en marbre
+  const floor = plane(60, 40, new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.38, metalness: 0, envMapIntensity: 0.25 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 20 - 6);
+  envGroup.add(floor);
+  // Façade (photo 1 recalée sur la largeur de la vitrine bleue)
+  const s = state.env.banner / (FACADE_PX.bannerR - FACADE_PX.bannerL);
+  const FW = FACADE_PX.w * s, FH = FACADE_PX.h * s;
+  const bannerMid = (FACADE_PX.bannerL + FACADE_PX.bannerR) / 2;
+  const fx = (FACADE_PX.w / 2 - bannerMid) * s;
+  const fac = plane(FW, FH, facadeTex ? new THREE.MeshStandardMaterial({ map: facadeTex, roughness: 0.9, envMapIntensity: 0.2 }) : new THREE.MeshStandardMaterial({ color: '#3d3f7a' }));
+  fac.position.set(fx, FH / 2, 0);
+  envGroup.add(fac);
+  const wallMat = new THREE.MeshStandardMaterial({ color: '#f1efec', roughness: 0.95 });
+  const top = plane(FW + 40, CEIL - FH, wallMat); top.position.set(fx, FH + (CEIL - FH) / 2, -0.002); envGroup.add(top);
+  const sideMat = new THREE.MeshStandardMaterial({ color: '#d9c3a2', roughness: 0.9 });
+  const left = plane(20, FH, sideMat); left.position.set(fx - FW / 2 - 10, FH / 2, -0.002); envGroup.add(left);
+  const right = plane(20, FH, new THREE.MeshStandardMaterial({ color: '#2b2a2c', roughness: 0.9 })); right.position.set(fx + FW / 2 + 10, FH / 2, -0.002); envGroup.add(right);
+  // Caisses Carrefour en face (photo 5)
+  const CW = 17, CH = CW * CARREFOUR_PX.h / CARREFOUR_PX.w;
+  const car = plane(CW, CH, carrefourTex ? new THREE.MeshStandardMaterial({ map: carrefourTex, roughness: 0.9, envMapIntensity: 0.2 }) : new THREE.MeshStandardMaterial({ color: '#cfc7bd' }));
+  car.rotation.y = Math.PI; car.position.set(0, CH / 2, aisle);
+  envGroup.add(car);
+  const ctop = plane(CW + 40, CEIL - CH, wallMat); ctop.rotation.y = Math.PI; ctop.position.set(0, CH + (CEIL - CH) / 2, aisle + 0.002); envGroup.add(ctop);
+  for (const sx of [-1, 1]) { const w = plane(20, CH, new THREE.MeshStandardMaterial({ color: '#e7dfd2', roughness: .9 })); w.rotation.y = Math.PI; w.position.set(sx * (CW / 2 + 10), CH / 2, aisle + 0.002); envGroup.add(w); }
+  // Plafond, puits de lumière et lames colorées (comme sur les photos)
+  const ceil = plane(60, aisle, new THREE.MeshStandardMaterial({ color: '#f4f2ef', roughness: 1 }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, CEIL, aisle / 2); ceilingGroup.add(ceil);
+  const sky = plane(3, 3.6, new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+  sky.rotation.x = Math.PI / 2; sky.position.set(-1.6, CEIL - 0.01, aisle / 2); ceilingGroup.add(sky);
+  const reds = new THREE.MeshStandardMaterial({ color: '#e0283a', roughness: .8 });
+  for (let i = 0; i < 3; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(3.4 - i * 0.5, 0.35, 0.5), reds); b.position.set(-1.6, CEIL - 0.25 - i * 0.12, aisle / 2 - 2.2 - i * 0.7); ceilingGroup.add(b); }
+  const slatCols = ['#e0262f', '#e8462a', '#ef7a22', '#f5a623', '#f6c94a'];
+  slatCols.forEach((c, i) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.28, aisle), new THREE.MeshStandardMaterial({ color: c, roughness: .8 }));
+    b.position.set(3.6 + i * 0.95, CEIL - 0.3, aisle / 2); ceilingGroup.add(b);
+  });
+}
+
+/* ---------- Habillage du stand (zone, passage, limite 1,50 m) ---------- */
+const standGroup = new THREE.Group(); scene.add(standGroup);
+function makeLabel(text, { fg = '#2a211d', bg = 'rgba(255,255,255,0.9)', size = 0.16, onTop = true } = {}) {
+  const fs = 44;
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  g.font = `600 ${fs}px "IBM Plex Mono", monospace`;
+  const tw = g.measureText(text).width;
+  c.width = Math.ceil(tw + fs * 0.9); c.height = Math.ceil(fs * 1.55);
+  g.font = `600 ${fs}px "IBM Plex Mono", monospace`;
+  g.fillStyle = bg;
+  const r = c.height / 2;
+  g.beginPath(); g.moveTo(r, 0); g.lineTo(c.width - r, 0); g.arc(c.width - r, r, r, -Math.PI / 2, Math.PI / 2); g.lineTo(r, c.height); g.arc(r, r, r, Math.PI / 2, Math.PI * 1.5); g.fill();
+  g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, c.width / 2, c.height / 2 + 2);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.SpriteMaterial({ map: t, depthTest: !onTop, transparent: true });
+  m.userData.own = true;
+  const sp = new THREE.Sprite(m);
+  sp.scale.set(size * c.width / c.height, size, 1);
+  sp.renderOrder = 20; sp.userData.noPick = true;
+  return sp;
+}
+function dashedRect(x0, z0, x1, z1, y, color, dash = 0.12) {
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1, y, z0), new THREE.Vector3(x1, y, z1), new THREE.Vector3(x0, y, z1), new THREE.Vector3(x0, y, z0)]);
+  const l = new THREE.Line(geo, new THREE.LineDashedMaterial({ color, dashSize: dash, gapSize: dash * 0.6, transparent: true, opacity: 0.95 }));
+  l.computeLineDistances();
+  return l;
+}
+let limitGroup = null;
+function buildStand() {
+  clearGroup(standGroup);
+  const s = state.stand, R = standRect();
+  const cx = s.x, cz = s.passage + s.d / 2;
+  // Zone du stand
+  const zone = plane(s.w, s.d, new THREE.MeshBasicMaterial({ color: '#6d2131', transparent: true, opacity: 0.07, depthWrite: false }));
+  zone.rotation.x = -Math.PI / 2; zone.position.set(cx, 0.003, cz); standGroup.add(zone);
+  standGroup.add(dashedRect(R.x0, R.z0, R.x1, R.z1, 0.006, '#6d2131'));
+  // Passage chariots (entre la vitrine et le stand)
+  const pw = s.w + 1.2;
+  const pt = stripesTex.clone(); pt.needsUpdate = true; pt.repeat.set(pw / 0.5, Math.max(s.passage, 0.1) / 0.5);
+  const pas = plane(pw, Math.max(s.passage, 0.01), new THREE.MeshBasicMaterial({ map: pt, transparent: true, opacity: 0.6, depthWrite: false }));
+  pas.material.userData.own = true;
+  pas.rotation.x = -Math.PI / 2; pas.position.set(cx, 0.004, s.passage / 2); standGroup.add(pas);
+  const lp = makeLabel(`Passage chariots ${fmt(s.passage)} m`, { fg: '#6b4300', bg: 'rgba(255,246,228,0.92)', size: 0.15, onTop: false });
+  lp.position.set(cx - s.w / 2 - 0.1, 0.12, s.passage / 2); lp.center.set(1, 0.5); standGroup.add(lp);
+  const lw = makeLabel(`${fmt(s.w)} m`, { size: 0.15, onTop: false }); lw.position.set(cx, 0.1, R.z1 + 0.18); standGroup.add(lw);
+  const ld = makeLabel(`${fmt(s.d)} m`, { size: 0.15, onTop: false }); ld.position.set(R.x1 + 0.12, 0.1, cz); ld.center.set(0, 0.5); standGroup.add(ld);
+  // Limite de hauteur
+  limitGroup = new THREE.Group();
+  const lim = plane(s.w, s.d, new THREE.MeshBasicMaterial({ color: '#c0392b', transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+  lim.rotation.x = -Math.PI / 2; lim.position.set(cx, LIMIT_H / 100, cz); lim.userData.noPick = true; limitGroup.add(lim);
+  limitGroup.add(dashedRect(R.x0, R.z0, R.x1, R.z1, LIMIT_H / 100, '#c0392b', 0.08));
+  for (const [x, z] of [[R.x0, R.z0], [R.x1, R.z0], [R.x1, R.z1], [R.x0, R.z1]]) {
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, z), new THREE.Vector3(x, LIMIT_H / 100, z)]);
+    const l = new THREE.Line(g, new THREE.LineDashedMaterial({ color: '#c0392b', dashSize: 0.06, gapSize: 0.05, transparent: true, opacity: 0.6 }));
+    l.computeLineDistances(); limitGroup.add(l);
+  }
+  const ll = makeLabel('1,50 m max', { fg: '#ffffff', bg: 'rgba(179,38,30,0.9)', size: 0.13 });
+  ll.position.set(R.x1, LIMIT_H / 100 + 0.08, R.z1); limitGroup.add(ll);
+  limitGroup.visible = state.opts.limit;
+  standGroup.add(limitGroup);
+  // Ombres centrées sur le stand
+  sun.position.set(cx + 2.5, 7, cz + 3.5); sun.target.position.set(cx, 0, cz);
+}
+
+/* ---------- Construction des meubles ---------- */
+let bagGeo = null, handleGeo = null, claspGeo = null;
+const BAG_H = 0.30;
+function makeBag(hex, s = 1) {
+  if (!bagGeo) {
+    const sh = new THREE.Shape();
+    sh.moveTo(-0.14, 0.01); sh.lineTo(0.14, 0.01); sh.lineTo(0.115, 0.21); sh.lineTo(-0.115, 0.21); sh.closePath();
+    bagGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 2, curveSegments: 1 });
+    bagGeo.translate(0, 0, -0.05);
+    handleGeo = new THREE.TorusGeometry(0.075, 0.008, 6, 20, Math.PI);
+    claspGeo = new THREE.BoxGeometry(0.05, 0.028, 0.01);
+  }
+  const g = new THREE.Group();
+  const m = bagMat(hex);
+  const body = new THREE.Mesh(bagGeo, m); body.castShadow = true; g.add(body);
+  const h = new THREE.Mesh(handleGeo, m); h.position.y = 0.215; g.add(h);
+  const c = new THREE.Mesh(claspGeo, mat('dore')); c.position.set(0, 0.16, 0.063); g.add(c);
+  g.scale.setScalar(s);
+  return g;
+}
+
+function buildItem(it) {
+  const g = new THREE.Group();
+  const w = it.w / 100, d = it.d / 100, h = it.h / 100;
+  const m = mat(it.color);
+  const bags = new THREE.Group(); g.add(bags);
+  let nBags = 0, bagTop = 0;
+  const addBag = (x, y, z, s = 1, ry = 0) => {
+    const b = makeBag(BAG_COLORS[(it.id * 5 + nBags * 3) % BAG_COLORS.length], s);
+    b.position.set(x, y, z); b.rotation.y = ry; bags.add(b);
+    nBags++; bagTop = Math.max(bagTop, y + BAG_H * s);
+  };
+  const box = (bw, bh, bd, mm, x, y, z) => {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(Math.max(bw, 0.001), Math.max(bh, 0.001), Math.max(bd, 0.001)), mm);
+    o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o;
+  };
+  const cyl = (r1, r2, ch, mm, x, y, z, seg = 18) => {
+    const o = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, ch, seg), mm);
+    o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o;
+  };
+  const fit = n => Math.max(0, n);
+  const hookRows = (top, low, rows) => {
+    const ys = [];
+    if (top < low) return ys;
+    const maxRows = Math.floor((top - low) / (BAG_H + 0.04)) + 1;
+    const n = Math.min(rows, maxRows);
+    const step = n > 1 ? Math.min((top - low) / (n - 1), 0.5) : 0;
+    for (let i = 0; i < n; i++) ys.push(top - i * step);
+    return ys;
+  };
+  const moulures = (faceZ, dir, x0, x1, y0, y1, mm) => {
+    const n = Math.max(1, Math.round((x1 - x0) / 1.0));
+    const pw = (x1 - x0) / n;
+    for (let i = 0; i < n; i++) {
+      const a = x0 + i * pw + 0.07, b = x0 + (i + 1) * pw - 0.07, t = 0.022, zz = faceZ + dir * 0.008;
+      box(b - a, t, 0.012, mm, (a + b) / 2, y1 - 0.07, zz);
+      box(b - a, t, 0.012, mm, (a + b) / 2, y0 + 0.07, zz);
+      box(t, y1 - y0 - 0.14, 0.012, mm, a, (y0 + y1) / 2, zz);
+      box(t, y1 - y0 - 0.14, 0.012, mm, b, (y0 + y1) / 2, zz);
+    }
+  };
+  const logoPlane = (pw, ph, x, y, z, ry = 0) => {
+    const tex = logoTex(PALETTE[it.color] ? PALETTE[it.color].color : '#262221');
+    const mm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }); mm.userData.own = true;
+    const o = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), mm); o.position.set(x, y, z); o.rotation.y = ry; g.add(o);
+  };
+
+  switch (it.type) {
+    case 'rail': {
+      const r = 0.012;
+      for (const sx of [-1, 1]) { const px = sx * (w / 2 - r); cyl(r, r, h, m, px, h / 2, 0, 10); box(0.03, 0.02, d, m, px, 0.01, 0); }
+      const ys = [h - 0.03];
+      if (+it.params.bars === 2 && h >= 1.05) ys.push(h - 0.03 - 0.6);
+      const sp = Math.max(0.08, (+it.params.spacing || 16) / 100);
+      for (const y of ys) {
+        const bar = cyl(r, r, w, m, 0, y, 0, 10); bar.rotation.z = Math.PI / 2;
+        const n = fit(Math.floor((w - 0.1) / sp));
+        for (let i = 0; i < n; i++) addBag(-((n - 1) * sp) / 2 + i * sp, y - BAG_H, 0, 1, 1.3);
+      }
+      break;
+    }
+    case 'wall': case 'peg': case 'panel': {
+      const faces = it.type === 'panel' ? 1 : (+it.params.faces || 1);
+      const t = it.type === 'peg' ? 0.018 : 0.03;
+      const base = it.type === 'peg' ? 0.12 : 0.06;
+      const panelZ = faces === 2 ? 0 : -d / 2 + t / 2 + (it.type === 'peg' ? 0.02 : 0);
+      let pm = m;
+      if (it.type === 'peg') {
+        const tex = holesBase.clone(); tex.needsUpdate = true; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(w / 0.05, (h - base) / 0.05);
+        pm = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE[it.color].color), map: tex, roughness: .75, envMapIntensity: .5 });
+        pm.userData.own = true;
+        for (const sx of [-1, 1]) { box(0.04, h, 0.04, m, sx * (w / 2 - 0.02), h / 2, panelZ); box(0.05, 0.035, d, m, sx * (w / 2 - 0.02), 0.0175, 0); }
+      } else {
+        box(w, base, d, mat(it.color, { shade: 0.25 }), 0, base / 2, 0);
+      }
+      box(it.type === 'peg' ? w - 0.08 : w, h - base, t, pm, 0, base + (h - base) / 2, panelZ);
+      if (it.type === 'wall') box(w, 0.025, Math.min(d, 0.07), mat('dore'), 0, h - 0.0125, panelZ);
+      for (let f = 0; f < faces; f++) {
+        const dir = f === 0 ? 1 : -1;
+        const faceZ = panelZ + dir * t / 2;
+        if (it.params.moulures) moulures(faceZ, dir, -w / 2 + 0.02, w / 2 - 0.02, base, h - 0.03, mat(it.color, { tint: 0.35 }));
+        if (it.type === 'panel') {
+          if (it.params.logo) logoPlane(Math.min(w * 0.75, 1.0), Math.min(w * 0.75, 1.0) / 4, 0, h * 0.72, faceZ + dir * 0.016, f ? Math.PI : 0);
+          continue;
+        }
+        const sp = Math.max(0.2, (+it.params.spacing || 34) / 100);
+        const n = fit(Math.floor((w - 0.06) / sp));
+        const ys = hookRows(h - 0.08, base + 0.06 + BAG_H, +it.params.rows || 3);
+        for (const y of ys) for (let i = 0; i < n; i++) {
+          const x = -((n - 1) * sp) / 2 + i * sp;
+          const peg = cyl(0.004, 0.004, 0.07, mat('dore'), x, y, faceZ + dir * 0.035, 6); peg.rotation.x = Math.PI / 2;
+          addBag(x, y - BAG_H + 0.01, faceZ + dir * 0.075, 1, f ? Math.PI : 0);
+        }
+      }
+      if (it.type === 'panel') for (const sx of [-1, 1]) box(0.05, 0.04, d, m, sx * (w / 2 - 0.05), 0.02, 0);
+      break;
+    }
+    case 'ladder': {
+      const tilt = Math.atan2(d - 0.06, h);
+      const L = Math.hypot(h, d - 0.06);
+      for (const sx of [-1, 1]) { const rail = box(0.04, L, 0.04, m, sx * (w / 2 - 0.02), h / 2, 0); rail.rotation.x = -tilt; }
+      for (let y = 0.3; y <= h - 0.12; y += 0.3) {
+        const z = (d / 2 - 0.03) - (y / h) * (d - 0.06);
+        const rung = cyl(0.014, 0.014, w - 0.06, m, 0, y, z, 10); rung.rotation.z = Math.PI / 2;
+        if (y - BAG_H >= 0.04) {
+          if (w >= 0.6) { addBag(-w / 4, y - BAG_H, z + 0.07, 0.95); addBag(w / 4, y - BAG_H, z + 0.07, 0.95); }
+          else addBag(0, y - BAG_H, z + 0.07, Math.min(1, (w - 0.02) / 0.3));
+        }
+      }
+      break;
+    }
+    case 'kallax': {
+      const cols = +it.params.cols || 2, rows = +it.params.rows || 2, T = 0.038, t = 0.016;
+      box(T, h, d, m, -w / 2 + T / 2, h / 2, 0); box(T, h, d, m, w / 2 - T / 2, h / 2, 0);
+      box(w, T, d, m, 0, T / 2, 0); box(w, T, d, m, 0, h - T / 2, 0);
+      const cw = (w - 2 * T - (cols - 1) * t) / cols, ch = (h - 2 * T - (rows - 1) * t) / rows;
+      for (let c = 1; c < cols; c++) box(t, h - 2 * T, d, m, -w / 2 + T + c * cw + (c - 1) * t + t / 2, h / 2, 0);
+      for (let r = 1; r < rows; r++) box(w - 2 * T, t, d, m, 0, T + r * ch + (r - 1) * t + t / 2, 0);
+      const s = Math.min(1, (cw - 0.03) / 0.31, (ch - 0.03) / BAG_H);
+      for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) addBag(-w / 2 + T + c * (cw + t) + cw / 2, T + r * (ch + t), 0, s);
+      break;
+    }
+    case 'crate': {
+      const t = 0.012;
+      box(w, t, d, m, 0, t / 2, 0); box(w, t, d, m, 0, h - t / 2, 0);
+      box(t, h, d, m, -w / 2 + t / 2, h / 2, 0); box(t, h, d, m, w / 2 - t / 2, h / 2, 0);
+      box(w, h, t, mat(it.color, { shade: 0.15 }), 0, h / 2, -d / 2 + t / 2);
+      const s = Math.min(1, (w - 0.05) / 0.31, (h - 2 * t - 0.02) / BAG_H, (d - 0.02) / 0.13);
+      if (s > 0.35) addBag(0, t, 0.005, s);
+      break;
+    }
+    case 'cube': case 'storage': {
+      box(w, h, d, m, 0, h / 2, 0);
+      if (it.type === 'storage') {
+        box(0.004, h - 0.04, 0.004, mat(it.color, { shade: 0.4 }), 0, h / 2, d / 2 + 0.002);
+        for (const sx of [-1, 1]) cyl(0.008, 0.008, 0.02, mat('dore'), sx * 0.04, h * 0.6, d / 2 + 0.01, 8).rotation.x = Math.PI / 2;
+      } else {
+        const n = Math.max(1, Math.floor(w / 0.34));
+        const s = Math.min(1, Math.max(0.6, (w - 0.04) / 0.3));
+        for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.34) / 2 + i * 0.34, h, 0, s);
+      }
+      break;
+    }
+    case 'steps': {
+      const N = +it.params.steps || 3, sd = d / N;
+      for (let i = 0; i < N; i++) {
+        const sh = h * (i + 1) / N, z = d / 2 - sd * (i + 0.5);
+        box(w, sh, sd, m, 0, sh / 2, z);
+        const n = Math.max(1, Math.floor(w / 0.34));
+        for (let k = 0; k < n; k++) addBag(-((n - 1) * 0.34) / 2 + k * 0.34, sh, z, sd < 0.2 ? 0.8 : 1);
+      }
+      break;
+    }
+    case 'bust': {
+      cyl(Math.min(w, d) / 2 - 0.01, Math.min(w, d) / 2, 0.02, m, 0, 0.01, 0);
+      cyl(0.012, 0.012, h - 0.03, m, 0, (h - 0.03) / 2, 0, 10);
+      const bar = cyl(0.01, 0.01, 0.22, m, 0, h - 0.03, 0, 8); bar.rotation.z = Math.PI / 2;
+      addBag(0, h - 0.03 - BAG_H, 0.04, 1);
+      break;
+    }
+    case 'counter': {
+      box(w, h - 0.03, d - 0.04, m, 0, (h - 0.03) / 2, -0.02);
+      box(w + 0.02, 0.03, d, mat('creme', { tint: 0.2 }), 0, h - 0.015, 0);
+      box(w, 0.06, d - 0.06, mat(it.color, { shade: 0.35 }), 0, 0.03, -0.03);
+      if (it.params.logo) logoPlane(Math.min(w * 0.7, 0.9), Math.min(w * 0.7, 0.9) / 4, 0, h * 0.6, d / 2 - 0.04 + 0.002);
+      box(0.11, 0.07, 0.16, mat('noir'), w / 2 - 0.18, h + 0.035, -0.08);
+      box(0.2, 0.08, 0.15, mat('bordeaux'), -w / 2 + 0.18, h + 0.04, -0.05);
+      box(0.14, 0.06, 0.1, mat('creme'), -w / 2 + 0.18, h + 0.11, -0.05);
+      break;
+    }
+    case 'console': {
+      box(w, 0.03, d, m, 0, h - 0.015, 0);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.03, h - 0.03, 0.03, m, sx * (w / 2 - 0.03), (h - 0.03) / 2, sz * (d / 2 - 0.03));
+      box(w - 0.06, 0.02, d - 0.06, m, 0, 0.14, 0);
+      const n = Math.max(1, Math.floor(w / 0.36));
+      for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.36) / 2 + i * 0.36, h, 0, 1);
+      if (h - 0.18 > BAG_H + 0.05) for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.36) / 2 + i * 0.36, 0.15, 0, 0.9);
+      break;
+    }
+    case 'table': {
+      cyl(w / 2, w / 2, 0.03, m, 0, h - 0.015, 0, 36);
+      cyl(0.025, 0.025, h - 0.03, m, 0, (h - 0.03) / 2, 0, 12);
+      cyl(w / 4, w / 4 + 0.01, 0.02, m, 0, 0.01, 0, 28);
+      if (w >= 0.7) { addBag(-0.16, h, 0, 1, 0.3); addBag(0.16, h, 0.02, 0.9, -0.3); } else addBag(0, h, 0, Math.min(1, w / 0.4));
+      break;
+    }
+    case 'mirror': {
+      box(w, 0.03, d, m, 0, 0.015, 0);
+      for (const sx of [-1, 1]) box(0.025, 0.12, 0.025, m, sx * (w / 2 - 0.03), 0.06, 0);
+      box(w, h - 0.12, 0.03, m, 0, 0.12 + (h - 0.12) / 2, 0);
+      const gl = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.06, h - 0.18), mirrorMat);
+      gl.position.set(0, 0.12 + (h - 0.12) / 2, 0.0155); g.add(gl);
+      break;
+    }
+    case 'rug': {
+      const o = new THREE.Mesh(new THREE.BoxGeometry(w, 0.008, d), mat(it.color, { tint: 0.05 }));
+      o.position.y = 0.004; o.receiveShadow = true; g.add(o);
+      break;
+    }
+    case 'tree': {
+      const pot = h * 0.2;
+      cyl(Math.min(w, d) * 0.22, Math.min(w, d) * 0.18, pot, m, 0, pot / 2, 0, 20);
+      cyl(0.025, 0.03, h * 0.15, mat('chene'), 0, pot + h * 0.06, 0, 8);
+      const green = new THREE.MeshStandardMaterial({ color: '#2e4a3b', roughness: .9 });
+      const lev = [[0.5, 0.42], [0.38, 0.62], [0.24, 0.8]];
+      lev.forEach(([r, y], i) => { const cone = new THREE.Mesh(new THREE.ConeGeometry(Math.min(w, d) * r, h * 0.38, 20), green); cone.position.y = h * y - h * 0.08 + (i ? 0 : 0.02); cone.castShadow = true; g.add(cone); });
+      const rr = rng(it.id * 13);
+      for (let i = 0; i < 12; i++) {
+        const a = rr() * Math.PI * 2, y = pot + 0.08 + rr() * (h - pot - 0.2), rad = Math.min(w, d) * 0.5 * (1 - (y - pot) / (h - pot)) * 0.95;
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), mat('dore')); b.position.set(Math.cos(a) * rad, y, Math.sin(a) * rad); g.add(b);
+      }
+      break;
+    }
+    case 'cart': {
+      const blue = new THREE.MeshStandardMaterial({ color: '#2456c9', roughness: .5, metalness: .2, transparent: true, opacity: 0.75 });
+      box(w, 0.42, d * 0.72, blue, 0, 0.74, 0.04);
+      box(w * 0.75, 0.03, d * 0.85, blue, 0, 0.16, 0);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        cyl(0.05, 0.05, 0.03, mat('noir'), sx * (w / 2 - 0.08), 0.05, sz * (d / 2 - 0.1), 12).rotation.z = Math.PI / 2;
+        box(0.02, 0.5, 0.02, blue, sx * (w / 2 - 0.06), 0.4, sz * (d / 2 - 0.12));
+      }
+      const hd = cyl(0.016, 0.016, w, new THREE.MeshStandardMaterial({ color: '#d62b2b', roughness: .5 }), 0, 1.0, d / 2 - 0.03, 10); hd.rotation.z = Math.PI / 2;
+      break;
+    }
+    case 'person': {
+      const pm = new THREE.MeshStandardMaterial({ color: '#b5aca4', roughness: 1, transparent: true, opacity: 0.88 });
+      const k = h / 1.65;
+      cyl(0.07 * k, 0.07 * k, 0.8 * k, pm, -0.08 * k, 0.4 * k, 0, 12); cyl(0.07 * k, 0.07 * k, 0.8 * k, pm, 0.08 * k, 0.4 * k, 0, 12);
+      cyl(0.17 * k, 0.14 * k, 0.6 * k, pm, 0, 1.1 * k, 0, 16);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.105 * k, 18, 14), pm); head.position.y = h - 0.11 * k; head.castShadow = true; g.add(head);
+      break;
+    }
+  }
+  bags.visible = state.opts.bags;
+  g.userData = { itemId: it.id, bags: nBags, bagTop, bagGroup: bags };
+  g.traverse(o => { if (o.isMesh && it.type !== 'rug') o.castShadow = true; });
+  return g;
+}
+
+const itemsGroup = new THREE.Group(); scene.add(itemsGroup);
+const objById = new Map();
+const statsById = new Map();
+function placeObj(it) {
+  const g = objById.get(it.id); if (!g) return;
+  g.position.set(it.x, it.elev / 100, it.z);
+  g.rotation.y = it.rot * DEG;
+}
+function rebuildItem(it) {
+  const old = objById.get(it.id);
+  if (old) { itemsGroup.remove(old); disposeObj(old); }
+  const g = buildItem(it);
+  objById.set(it.id, g);
+  statsById.set(it.id, { bags: g.userData.bags, bagTop: g.userData.bagTop });
+  itemsGroup.add(g);
+  placeObj(it);
+  if (it.id === selectedId) decorateSelection();
+  addPlanLabel(it, g);
+}
+function disposeObj(o) {
+  o.traverse(c => {
+    if (c.geometry && c.geometry !== bagGeo && c.geometry !== handleGeo && c.geometry !== claspGeo) c.geometry.dispose();
+    if (c.material && c.material.userData && c.material.userData.own) { if (c.material.map) c.material.map.dispose(); c.material.dispose(); }
+  });
+}
+function rebuildAll() {
+  for (const [, g] of objById) { itemsGroup.remove(g); disposeObj(g); }
+  objById.clear(); statsById.clear();
+  for (const it of state.items) rebuildItem(it);
+  decorateSelection();
+}
+function addPlanLabel(it, g) {
+  const short = it.name.replace(/\s*\(.*\)$/, '');
+  const lab = makeLabel(short.length > 22 ? short.slice(0, 21) + '…' : short, { size: 0.11, bg: 'rgba(255,255,255,0.85)' });
+  lab.position.set(0, it.h / 100 + 0.06, 0);
+  lab.userData.planLabel = true;
+  lab.userData.hideInPlan = it.type === 'rug';
+  lab.visible = viewMode === 'plan' && it.type !== 'rug';
+  g.add(lab);
+}
+
+/* Sélection */
+let selDeco = null;
+function decorateSelection() {
+  if (selDeco && selDeco.parent) { selDeco.parent.remove(selDeco); disposeObj(selDeco); }
+  selDeco = null;
+  const it = getSel(); if (!it) return;
+  const g = objById.get(it.id); if (!g) return;
+  selDeco = new THREE.Group(); selDeco.userData.noPick = true;
+  const w = it.w / 100 + 0.03, h = Math.max(it.h / 100, 0.01) + 0.03, d = it.d / 100 + 0.03;
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), new THREE.LineBasicMaterial({ color: '#e0405c', depthTest: false, transparent: true }));
+  edges.material.userData.own = true;
+  edges.position.y = h / 2 - 0.015; edges.renderOrder = 15; edges.userData.noPick = true;
+  selDeco.add(edges);
+  const lab = makeLabel(`${Math.round(it.w)} × ${Math.round(it.d)} × ${Math.round(it.h)} cm`, { fg: '#ffffff', bg: 'rgba(109,33,49,0.92)', size: 0.13 });
+  lab.position.y = it.h / 100 + 0.2; selDeco.add(lab);
+  g.add(selDeco);
+}
+const getSel = () => state.items.find(i => i.id === selectedId) || null;
+
+/* ---------- Caméras ---------- */
+const controls = new THREE.OrbitControls(persp, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.12;
+controls.maxPolarAngle = 88 * DEG; controls.minDistance = 0.8; controls.maxDistance = 26;
+controls.screenSpacePanning = true;
+let tween = null;
+function standCenter() { const s = state.stand; return new THREE.Vector3(s.x, 0, s.passage + s.d / 2); }
+function setView(v, instant = false) {
+  viewMode = v;
+  document.querySelectorAll('.vbar button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+  const c = standCenter(), s = state.stand;
+  for (const [, g] of objById) g.traverse(o => { if (o.userData.planLabel) o.visible = v === 'plan' && !o.userData.hideInPlan; });
+  if (v === 'plan') {
+    camera = ortho; controls.object = ortho; controls.enableRotate = false;
+    ortho.up.set(0, 0, -1);
+    ortho.position.set(c.x, 20, c.z - 0.6);
+    controls.target.set(c.x, 0, c.z - 0.6);
+    ortho.zoom = 1; fitOrtho(Math.max(s.w + 2.4, (s.passage + s.d + 1.2) * 1.3));
+    ortho.lookAt(controls.target);
+    tween = null;
+  } else {
+    camera = persp; controls.object = persp; controls.enableRotate = true;
+    persp.up.set(0, 1, 0);
+    const P = {
+      '3d': [[c.x + 3.6, 3.3, c.z + 4.6], [c.x, 0.55, c.z - 0.3]],
+      client: [[c.x + 0.6, 1.6, c.z + 3.6], [c.x, 0.85, c.z - 0.4]],
+      carrefour: [[c.x - 0.4, 1.65, state.env.aisle - 0.7], [c.x, 0.9, s.passage]],
+      passage: [[c.x - s.w / 2 - 3.2, 1.55, s.passage * 0.5], [c.x + 0.8, 0.8, s.passage * 0.55]],
+    }[v];
+    const to = { pos: new THREE.Vector3(...P[0]), tgt: new THREE.Vector3(...P[1]) };
+    if (instant) { persp.position.copy(to.pos); controls.target.copy(to.tgt); tween = null; }
+    else tween = { from: { pos: persp.position.clone(), tgt: controls.target.clone() }, to, t0: performance.now(), dur: 650 };
+  }
+  controls.update();
+}
+let orthoSpan = 7;
+function fitOrtho(span) {
+  if (span) orthoSpan = span;
+  const r = host.getBoundingClientRect(), aspect = r.width / Math.max(r.height, 1);
+  let halfW = orthoSpan / 2, halfH = halfW / aspect;
+  if (halfH < orthoSpan * 0.4) { halfH = orthoSpan * 0.4; halfW = halfH * aspect; }
+  Object.assign(ortho, { left: -halfW, right: halfW, top: halfH, bottom: -halfH });
+  ortho.updateProjectionMatrix();
+}
+function resize() {
+  const r = host.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  renderer.setSize(r.width, r.height, false);
+  persp.aspect = r.width / r.height; persp.updateProjectionMatrix();
+  fitOrtho();
+}
+new ResizeObserver(resize).observe(host);
+
+/* ---------- Interaction : sélection et glisser ---------- */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const pointers = new Set();
+let drag = null, down = null;
+function setRay(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+}
+function pick(e) {
+  setRay(e);
+  const hits = ray.intersectObjects(itemsGroup.children, true);
+  for (const h of hits) {
+    let o = h.object, skip = false;
+    while (o && o.userData.itemId == null) { if (o.userData.noPick || o.userData.planLabel) skip = true; o = o.parent; }
+    if (skip || !o) continue;
+    const it = state.items.find(i => i.id === o.userData.itemId);
+    if (it && !it.locked) return it;
+  }
+  return null;
+}
+function floorPoint(e) { setRay(e); const p = new THREE.Vector3(); return ray.ray.intersectPlane(floorPlane, p) ? p : null; }
+
+function snapLines(it) {
+  const R = standRect();
+  const xs = [R.x0, R.x1, state.stand.x], zs = [R.z0, R.z1, 0];
+  for (const o of state.items) {
+    if (o === it || o.type === 'rug' || isRef(o)) continue;
+    const b = bounds(o); xs.push(b.x0, b.x1); zs.push(b.z0, b.z1);
+  }
+  return { xs, zs };
+}
+function snapAxis(v, half, lines, tol = 0.045) {
+  let best = null, bd = tol;
+  for (const L of lines) {
+    for (const cand of [L + half, L - half]) { const dd = Math.abs(v - cand); if (dd < bd) { bd = dd; best = cand; } }
+  }
+  return best;
+}
+function moveTo(it, nx, nz) {
+  if (state.opts.snap) {
+    const b = bounds(it), hx = (b.x1 - b.x0) / 2, hz = (b.z1 - b.z0) / 2;
+    const { xs, zs } = snapLines(it);
+    const sx = snapAxis(nx, hx, xs), sz = snapAxis(nz, hz, zs);
+    nx = sx != null ? sx : Math.round(nx * 100) / 100;
+    nz = sz != null ? sz : Math.round(nz * 100) / 100;
+  } else { nx = Math.round(nx * 100) / 100; nz = Math.round(nz * 100) / 100; }
+  const above = drag && drag.above ? drag.above : null;
+  const px = it.x, pz = it.z, pe = it.elev;
+  it.x = nx; it.z = nz;
+  settle(it, state.items, above);
+  placeObj(it);
+  // la pile posée dessus suit le meuble
+  if (above) for (const o of above) { o.x += it.x - px; o.z += it.z - pz; o.elev += it.elev - pe; placeObj(o); }
+}
+
+canvas.addEventListener('pointerdown', e => {
+  pointers.add(e.pointerId);
+  down = { x: e.clientX, y: e.clientY, hit: false };
+  if (pointers.size > 1) { if (drag) endDrag(); return; }
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const it = pick(e);
+  if (it) {
+    down.hit = true;
+    select(it.id, { fromView: true });
+    const p = floorPoint(e);
+    if (p) {
+      drag = { id: it.id, ox: it.x - p.x, oz: it.z - p.z, pid: e.pointerId, moved: false, above: stackedOn(it) };
+      controls.enabled = false;
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) { }
+    }
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const it = state.items.find(i => i.id === drag.id); if (!it) return;
+  const p = floorPoint(e); if (!p) return;
+  moveTo(it, p.x + drag.ox, p.z + drag.oz);
+  drag.moved = true;
+  scheduleChecks();
+});
+function endDrag() {
+  if (!drag) return;
+  const moved = drag.moved;
+  drag = null; controls.enabled = true;
+  if (moved) { settleAll(); for (const it of state.items) placeObj(it); refresh(); save(); renderItemPane(); }
+}
+const onUp = e => {
+  pointers.delete(e.pointerId);
+  if (drag && e.pointerId === drag.pid) endDrag();
+  else if (down && !down.hit && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5 && pointers.size === 0) select(null);
+  down = null;
+};
+canvas.addEventListener('pointerup', onUp);
+canvas.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); endDrag(); });
+
+window.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (['input', 'textarea', 'select'].includes(tag)) return;
+  const it = getSel(); if (!it) return;
+  const step = e.shiftKey ? 0.1 : 0.01;
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeItem(it.id); }
+  else if (e.key === 'r' || e.key === 'R') rotateSel(e.shiftKey ? -15 : 90);
+  else if (e.key === 'ArrowLeft') { it.x -= step; nudged(it); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { it.x += step; nudged(it); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { it.z -= step; nudged(it); e.preventDefault(); }
+  else if (e.key === 'ArrowDown') { it.z += step; nudged(it); e.preventDefault(); }
+  else if (e.key === 'Escape') select(null);
+});
+function nudged(it) { it.x = Math.round(it.x * 100) / 100; it.z = Math.round(it.z * 100) / 100; settleAll(); state.items.forEach(placeObj); refresh(); save(); renderItemPane(); }
+
+/* ---------- Actions ---------- */
+function select(id, { fromView = false } = {}) {
+  selectedId = id;
+  decorateSelection();
+  const it = getSel();
+  $('#selbar').hidden = !it;
+  $('#hint').hidden = !!it;
+  if (it) $('#selName').textContent = `${it.name} · ${Math.round(it.w)}×${Math.round(it.d)}×${Math.round(it.h)}`;
+  if (it && fromView) setTab('item');
+  renderItemPane();
+}
+function findFreeSpot(it) {
+  const R = standRect();
+  const tryAt = (x, z) => { it.x = x; it.z = z; return !state.items.some(o => o !== it && o.type !== 'rug' && !isRef(o) && obbOverlap(o, it)); };
+  const cx = state.stand.x, cz = state.stand.passage + state.stand.d / 2;
+  if (tryAt(cx, cz)) return;
+  for (let r = 0.1; r < 2; r += 0.1) {
+    for (let a = 0; a < 16; a++) {
+      const x = Math.round((cx + Math.cos(a / 16 * Math.PI * 2) * r) * 100) / 100, z = Math.round((cz + Math.sin(a / 16 * Math.PI * 2) * r * 0.7) * 100) / 100;
+      const b = bounds(Object.assign({}, it, { x, z }));
+      if (b.x0 < R.x0 - 0.001 || b.x1 > R.x1 + 0.001 || b.z0 < R.z0 - 0.001 || b.z1 > R.z1 + 0.001) continue;
+      if (tryAt(x, z)) return;
+    }
+  }
+  it.x = cx; it.z = cz;
+}
+function addFromCatalog(type) {
+  const it = makeItem(type);
+  if (type === 'rug') { it.x = state.stand.x; it.z = state.stand.passage + state.stand.d / 2; }
+  else if (type === 'cart') { it.x = state.stand.x + 1; it.z = state.stand.passage / 2; it.rot = 90; }
+  else if (type === 'person') { it.x = state.stand.x; it.z = state.stand.passage + state.stand.d + 0.8; it.rot = 180; }
+  else findFreeSpot(it);
+  state.items.push(it);
+  settle(it);
+  rebuildItem(it);
+  select(it.id);
+  refresh(); save();
+}
+function removeItem(id) {
+  const g = objById.get(id);
+  if (g) { itemsGroup.remove(g); disposeObj(g); objById.delete(id); statsById.delete(id); }
+  state.items = state.items.filter(i => i.id !== id);
+  if (selectedId === id) select(null);
+  settleAll(); state.items.forEach(placeObj);
+  refresh(); save(); renderItemPane();
+}
+function duplicateSel() {
+  const it = getSel(); if (!it) return;
+  const c = JSON.parse(JSON.stringify(it));
+  c.id = nextId++;
+  c.name = it.name;
+  const b = bounds(it);
+  c.x = Math.round((it.x + (b.x1 - b.x0) + 0.02) * 100) / 100;
+  if (STACK_SOURCES.has(it.type)) c.x = it.x, c.z = it.z; // les caisses / cubes se dupliquent en pile
+  state.items.push(c);
+  settle(c);
+  rebuildItem(c);
+  select(c.id);
+  refresh(); save();
+}
+function rotateSel(deg) {
+  const it = getSel(); if (!it) return;
+  it.rot = ((Math.round(it.rot + deg) % 360) + 360) % 360;
+  placeObj(it); settleAll(); state.items.forEach(placeObj);
+  refresh(); save(); renderItemPane();
+}
+$('#sbRot').onclick = () => rotateSel(90);
+$('#sbRotL').onclick = () => rotateSel(15);
+$('#sbDup').onclick = duplicateSel;
+$('#sbDel').onclick = () => { const it = getSel(); if (it) removeItem(it.id); };
+$('#sbClose').onclick = () => select(null);
+document.querySelectorAll('.vbar button').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+/* ---------- Contrôles et chiffres ---------- */
+function computeChecks() {
+  const s = state.stand, R = standRect();
+  const issues = [];
+  const real = state.items.filter(i => !isRef(i));
+  const facade = real.filter(isFacade);
+  const inStand = real.filter(i => !isFacade(i));
+  const area = s.w * s.d;
+  // Hauteur
+  let maxH = 0, maxItem = null, maxBag = 0;
+  for (const it of real) {
+    if (it.type === 'rug') continue;
+    const top = it.elev + it.h;
+    if (top > maxH) { maxH = top; maxItem = it; }
+    const st = statsById.get(it.id);
+    if (st && st.bags && state.opts.bags) maxBag = Math.max(maxBag, it.elev + st.bagTop * 100);
+    if (top > LIMIT_H + 0.4) issues.push(['bad', `${it.name} monte à ${Math.round(top)} cm (limite ${LIMIT_H} cm)`, it.id]);
+  }
+  if (maxBag > LIMIT_H + 0.4 && maxH <= LIMIT_H + 0.4) issues.push(['warn', `Des sacs posés dépassent 1,50 m (${Math.round(maxBag)} cm)`]);
+  // Passage chariots
+  let facadeFront = 0;
+  for (const it of facade) { const b = bounds(it); if (b.x1 > R.x0 && b.x0 < R.x1) facadeFront = Math.max(facadeFront, b.z1); }
+  let standBack = s.passage;
+  for (const it of inStand) { if (it.type === 'rug') continue; const b = bounds(it); if (b.x1 > R.x0 - 0.6 && b.x0 < R.x1 + 0.6) standBack = Math.min(standBack, b.z0); }
+  const passage = standBack - facadeFront;
+  if (passage < s.passageMin - 0.004) issues.push(['bad', `Passage chariots trop étroit : ${fmt(passage)} m (minimum ${fmt(s.passageMin)} m)`]);
+  // Hors stand
+  for (const it of inStand) {
+    const b = bounds(it);
+    const over = Math.max(R.x0 - b.x0, b.x1 - R.x1, R.z0 - b.z0, b.z1 - R.z1);
+    if (over > 0.01) issues.push(['bad', `${it.name} dépasse du stand de ${Math.round(over * 100)} cm`, it.id]);
+  }
+  // Chevauchements
+  const solid = inStand.concat(facade).filter(i => i.type !== 'rug');
+  for (let i = 0; i < solid.length; i++) for (let j = i + 1; j < solid.length; j++) {
+    const a = solid[i], b = solid[j];
+    const v = Math.min(a.elev + a.h, b.elev + b.h) - Math.max(a.elev, b.elev);
+    if (v > 1 && obbOverlap(a, b)) issues.push(['warn', `${a.name} et ${b.name} se chevauchent`, a.id]);
+  }
+  if (area > 6.0001) issues.push(['bad', `Surface ${fmt(area)} m² : au-delà des 6 m² loués`]);
+  if (facade.length) issues.push(['warn', `${facade.map(i => i.name).join(', ')} contre la vitrine : à valider avec la galerie`]);
+  let bags = 0, budget = 0, foot = 0;
+  for (const it of real) {
+    const st = statsById.get(it.id); bags += st ? st.bags : 0; budget += +it.price || 0;
+    if (!isFacade(it) && it.type !== 'rug' && it.elev < 1) foot += (it.w * it.d) / 10000;
+  }
+  return { area, maxH, maxItem, passage, issues, bags, budget, occupancy: Math.min(100, foot / area * 100) };
+}
+let checkTimer = 0;
+function scheduleChecks() { if (checkTimer) return; checkTimer = requestAnimationFrame(() => { checkTimer = 0; renderChecks(); }); }
+let lastIssueIds = new Set();
+function renderChecks() {
+  const c = computeChecks(), s = state.stand;
+  lastIssueIds = new Set(c.issues.filter(i => i[0] === 'bad' && i[2]).map(i => i[2]));
+  const kpi = (k, v, cls) => `<div class="kpi ${cls}"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const hOk = c.maxH <= LIMIT_H + 0.4;
+  const pOk = c.passage >= s.passageMin - 0.004;
+  $('#checks').innerHTML = `
+    <div class="kpis">
+      ${kpi('Surface', `${fmt(c.area)} m²`, c.area > 6.0001 ? 'bad' : 'ok')}
+      ${kpi('Hauteur max', `${Math.round(c.maxH)} cm`, hOk ? 'ok' : 'bad')}
+      ${kpi('Passage', `${fmt(c.passage)} m`, pOk ? 'ok' : 'bad')}
+      ${kpi('Sacs exposés', `${c.bags}`, '')}
+      ${kpi('Budget meubles', `≈ ${Math.round(c.budget)} €`, '')}
+      ${kpi('Sol occupé', `${Math.round(c.occupancy)} %`, c.occupancy > 65 ? 'warn' : '')}
+    </div>
+    ${c.issues.length ? `<ul class="issues">${c.issues.map(i => `<li class="${i[0]}">${esc(i[1])}</li>`).join('')}</ul>` : `<ul class="issues"><li class="ok">Tout est conforme : hauteur, passage et surface.</li></ul>`}`;
+}
+function refresh() { renderChecks(); renderList(); }
+
+/* ---------- Panneaux ---------- */
+function setTab(t) {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('.pane').forEach(p => p.hidden = p.dataset.pane !== t);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+function renderAddPane() {
+  const groups = {};
+  for (const [k, c] of Object.entries(CATALOG)) (groups[c.group] = groups[c.group] || []).push([k, c]);
+  $('#paneAdd').innerHTML = `<p class="lead">Touchez un élément pour l’ajouter au stand, puis glissez-le dans la 3D. Les cotes sont les tailles réelles, modifiables ensuite.</p>` +
+    Object.entries(groups).map(([g, arr]) => `<div class="group"><h3>${esc(g)}</h3><div class="cat">${arr.map(([k, c]) => {
+      const it = makeItemPreview(k);
+      return `<button type="button" data-add="${k}"><span class="n">${esc(c.name)}</span><span class="d">${it.w} × ${it.d} × ${it.h} cm</span><span class="p">${esc(c.desc)}${c.price ? ` · ≈ ${c.price} €` : ''}</span></button>`;
+    }).join('')}</div></div>`).join('');
+  $('#paneAdd').querySelectorAll('[data-add]').forEach(b => b.onclick = () => addFromCatalog(b.dataset.add));
+}
+function makeItemPreview(k) { const c = CATALOG[k]; const it = { w: c.w, d: c.d, h: c.h, params: Object.assign({}, c.params) }; if (k === 'kallax') kallaxDims(it); return it; }
+
+function field(id, label, value, { type = 'number', step = 1, min = null, max = null, wide = false, disabled = false } = {}) {
+  return `<div class="field${wide ? ' wide' : ''}"><label for="${id}">${label}</label><input id="${id}" type="${type}" ${type === 'number' ? `step="${step}" inputmode="decimal"` : ''} ${min != null ? `min="${min}"` : ''} ${max != null ? `max="${max}"` : ''} value="${esc(value)}" ${disabled ? 'disabled' : ''}></div>`;
+}
+function renderItemPane() {
+  const it = getSel();
+  const pane = $('#paneItem');
+  let html = '';
+  if (!it) {
+    html += `<p class="lead">Touchez un meuble dans la 3D (ou dans la liste ci-dessous) pour changer ses dimensions, sa couleur ou sa position.</p>`;
+  } else {
+    const c = CATALOG[it.type];
+    const st = statsById.get(it.id) || { bags: 0 };
+    const R = standRect();
+    const kal = it.type === 'kallax';
+    html += `<div class="group"><h2>${esc(it.name)}</h2>
+      <div class="row"><span class="chip">${st.bags} sac${st.bags > 1 ? 's' : ''}</span><span class="chip ${it.elev + it.h > LIMIT_H + 0.4 ? 'bad' : 'ok'}">haut à ${Math.round(it.elev + it.h)} cm</span>${it.elev > 0 ? `<span class="chip">posé à ${Math.round(it.elev)} cm</span>` : ''}</div></div>
+      <div class="group"><h3>Dimensions réelles</h3><div class="fields">
+        ${field('fW', 'Largeur (cm)', Math.round(it.w * 10) / 10, { min: 1, disabled: kal })}
+        ${field('fD', 'Profondeur (cm)', Math.round(it.d * 10) / 10, { min: 1, disabled: kal })}
+        ${field('fH', 'Hauteur (cm)', Math.round(it.h * 10) / 10, { min: 1, disabled: kal })}
+      </div>${kal ? '<p class="note">Les dimensions suivent le nombre de cases (33 cm par case).</p>' : ''}</div>
+      ${(c.schema || []).length ? `<div class="group"><h3>Réglages</h3><div class="fields">${c.schema.map(p => paramField(it, p)).join('')}</div></div>` : ''}
+      <div class="group"><h3>Position</h3><div class="fields">
+        ${field('fX', 'Depuis le bord gauche (cm)', Math.round((it.x - R.x0) * 100))}
+        ${field('fZ', 'Depuis le bord côté vitrine (cm)', Math.round((it.z - R.z0) * 100))}
+        ${field('fR', 'Rotation (°)', Math.round(it.rot), { step: 15 })}
+        ${field('fE', 'Posé à (cm du sol)', Math.round(it.elev), { min: 0 })}
+      </div>
+      <label class="check"><input type="checkbox" id="fAuto" ${it.autoElev ? 'checked' : ''}> Empiler automatiquement sur ce qui est dessous</label>
+      <label class="check"><input type="checkbox" id="fLock" ${it.locked ? 'checked' : ''}> Verrouiller (ne bouge plus quand on touche la 3D)</label>
+      <p class="note">Positions mesurées au centre du meuble, depuis le coin du stand côté vitrine et côté Mister Minit.</p></div>
+      ${isRef(it) ? '' : `<div class="group"><h3>Couleur / matière</h3><div class="swatches">${Object.entries(PALETTE).map(([k, p]) => `<button type="button" data-color="${k}" title="${p.label}" aria-label="${p.label}" aria-pressed="${k === it.color}" style="background:${p.color}"></button>`).join('')}</div></div>
+      <div class="group"><div class="fields">${field('fN', 'Nom', it.name, { type: 'text', wide: true })}${field('fP', 'Prix estimé (€)', it.price, { min: 0 })}</div></div>`}
+      <div class="row"><button type="button" class="btn" id="bRot">Pivoter 90°</button><button type="button" class="btn" id="bDup">Dupliquer</button><button type="button" class="btn danger" id="bDel">Supprimer</button></div>`;
+  }
+  html += `<div class="group"><h3>Tous les éléments (${state.items.length})</h3><ul class="list" id="itemList"></ul></div>`;
+  pane.innerHTML = html;
+  renderList();
+  if (!it) return;
+  const num = id => { const v = parseFloat($('#' + id).value.replace(',', '.')); return isFinite(v) ? v : null; };
+  const live = (id, fn, rebuild = true) => {
+    const el = $('#' + id); if (!el) return;
+    el.addEventListener('input', () => { if (fn() === false) return; if (rebuild) rebuildItem(it); settleAll(); state.items.forEach(placeObj); renderChecks(); save(); });
+    el.addEventListener('change', () => { renderItemPane(); select(it.id); });
+  };
+  live('fW', () => { const v = num('fW'); if (v == null || v <= 0) return false; it.w = v; });
+  live('fD', () => { const v = num('fD'); if (v == null || v <= 0) return false; it.d = v; });
+  live('fH', () => { const v = num('fH'); if (v == null || v <= 0) return false; it.h = v; });
+  live('fX', () => { const v = num('fX'); if (v == null) return false; it.x = standRect().x0 + v / 100; }, false);
+  live('fZ', () => { const v = num('fZ'); if (v == null) return false; it.z = standRect().z0 + v / 100; }, false);
+  live('fR', () => { const v = num('fR'); if (v == null) return false; it.rot = ((v % 360) + 360) % 360; }, false);
+  live('fE', () => { const v = num('fE'); if (v == null || v < 0) return false; it.elev = v; it.autoElev = false; $('#fAuto').checked = false; }, false);
+  $('#fAuto').onchange = e => { it.autoElev = e.target.checked; if (it.autoElev) settleAll(); state.items.forEach(placeObj); refresh(); save(); renderItemPane(); };
+  $('#fLock').onchange = e => { it.locked = e.target.checked; save(); };
+  const fN = $('#fN'); if (fN) fN.addEventListener('input', () => { it.name = fN.value || CATALOG[it.type].name; $('#selName').textContent = it.name; renderList(); save(); });
+  const fP = $('#fP'); if (fP) fP.addEventListener('input', () => { const v = num('fP'); it.price = v == null ? 0 : v; renderChecks(); save(); });
+  pane.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { it.color = b.dataset.color; rebuildItem(it); save(); renderItemPane(); });
+  pane.querySelectorAll('[data-param]').forEach(el => {
+    const ev = el.type === 'checkbox' ? 'change' : 'input';
+    el.addEventListener(ev, () => {
+      const k = el.dataset.param;
+      let v = el.type === 'checkbox' ? el.checked : (el.tagName === 'SELECT' ? +el.value : parseFloat(el.value));
+      if (typeof v === 'number' && !isFinite(v)) return;
+      it.params[k] = v;
+      if (it.type === 'kallax') kallaxDims(it);
+      rebuildItem(it); settleAll(); state.items.forEach(placeObj); refresh(); save();
+      if (it.type === 'kallax' || el.tagName === 'SELECT' || el.type === 'checkbox') renderItemPane();
+    });
+  });
+  $('#bRot').onclick = () => rotateSel(90);
+  $('#bDup').onclick = duplicateSel;
+  $('#bDel').onclick = () => removeItem(it.id);
+}
+function paramField(it, p) {
+  const v = it.params[p.key];
+  if (p.type === 'bool') return `<label class="check field wide"><input type="checkbox" data-param="${p.key}" ${v ? 'checked' : ''}> ${esc(p.label)}</label>`;
+  if (p.type === 'select') return `<div class="field"><label>${esc(p.label)}</label><select data-param="${p.key}">${p.options.map(([ov, ol]) => `<option value="${ov}" ${+v === ov ? 'selected' : ''}>${ol}</option>`).join('')}</select></div>`;
+  return `<div class="field"><label>${esc(p.label)}</label><input type="number" data-param="${p.key}" value="${v}" min="${p.min}" max="${p.max}" step="1"></div>`;
+}
+function renderList() {
+  const ul = $('#itemList'); if (!ul) return;
+  const sorted = [...state.items].sort((a, b) => (isRef(a) - isRef(b)) || a.name.localeCompare(b.name, 'fr'));
+  ul.innerHTML = sorted.map(it => {
+    const st = statsById.get(it.id) || { bags: 0 };
+    return `<li><button type="button" data-sel="${it.id}" aria-current="${it.id === selectedId}"><span class="nm">${lastIssueIds.has(it.id) ? '<span class="flag">● </span>' : ''}${esc(it.name)}${it.locked ? ' · verrouillé' : ''}</span><span class="dm">${Math.round(it.w)}×${Math.round(it.d)}×${Math.round(it.h)}${st.bags ? ` · ${st.bags} sacs` : ''}</span></button></li>`;
+  }).join('');
+  ul.querySelectorAll('[data-sel]').forEach(b => b.onclick = () => select(+b.dataset.sel));
+}
+
+function renderStandPane() {
+  const s = state.stand, e = state.env, o = state.opts;
+  const area = s.w * s.d;
+  $('#paneStand').innerHTML = `
+    <div class="group"><h2>Le stand</h2>
+      <div class="fields">
+        ${field('sW', 'Largeur (m)', s.w, { step: 0.05, min: 0.5 })}
+        ${field('sD', 'Profondeur (m)', s.d, { step: 0.05, min: 0.5 })}
+        <div class="field"><span class="lbl">Surface</span><span class="chip ${area > 6.0001 ? 'bad' : 'ok'}" id="sArea">${fmt(area)} m²</span></div>
+      </div>
+      <div class="row"><button type="button" class="btn small" id="sFit">Ajuster la profondeur pour 6 m²</button></div>
+      <p class="note">La largeur est le côté parallèle à la vitrine bleue.</p>
+    </div>
+    <div class="group"><h3>Emplacement</h3>
+      <div class="fields">
+        ${field('sP', 'Passage chariots (m)', s.passage, { step: 0.05, min: 0 })}
+        ${field('sPm', 'Minimum exigé (m)', s.passageMin, { step: 0.05, min: 0 })}
+        ${field('sX', 'Décalage latéral (m)', s.x, { step: 0.05 })}
+      </div>
+      <p class="note">Le passage se mesure entre la vitrine (ou ce qui y est posé) et le stand. Le décalage déplace le stand le long de la vitrine (négatif = vers Mister Minit). Les meubles suivent.</p>
+    </div>
+    <div class="group"><h3>Calibrer le décor</h3>
+      <div class="fields">
+        ${field('eB', 'Largeur de la vitrine bleue (m)', e.banner, { step: 0.05, min: 2 })}
+        ${field('eA', 'Distance vitrine → caisses Carrefour (m)', e.aisle, { step: 0.25, min: 4 })}
+      </div>
+      <p class="note">Valeurs estimées d’après vos photos. Mesurez-les sur place : le décor photo se recale tout seul à la bonne échelle.</p>
+    </div>
+    <div class="group"><h3>Affichage</h3>
+      <label class="check"><input type="checkbox" id="oBags" ${o.bags ? 'checked' : ''}> Montrer les sacs</label>
+      <label class="check"><input type="checkbox" id="oLimit" ${o.limit ? 'checked' : ''}> Montrer la limite de 1,50 m</label>
+      <label class="check"><input type="checkbox" id="oCeil" ${o.ceiling ? 'checked' : ''}> Plafond et lames colorées de la galerie</label>
+      <label class="check"><input type="checkbox" id="oSnap" ${o.snap ? 'checked' : ''}> Aimanter les meubles aux bords (au cm près sinon)</label>
+    </div>`;
+  const num = id => { const v = parseFloat($('#' + id).value.replace(',', '.')); return isFinite(v) ? v : null; };
+  const standChange = (fn) => () => {
+    const before = { ...state.stand }; const R0 = standRect();
+    const onFacade = new Set(state.items.filter(isFacade));
+    if (fn() === false) return;
+    const dx = state.stand.x - before.x, dz = state.stand.passage - before.passage;
+    if (dx || dz) for (const it of state.items) {
+      if (onFacade.has(it)) continue;
+      const inOld = it.x >= R0.x0 - 0.3 && it.x <= R0.x1 + 0.3 && it.z >= R0.z0 - 0.3 && it.z <= R0.z1 + 1.2;
+      const cartLike = it.type === 'cart' && it.z < R0.z0;
+      if (inOld) { it.x += dx; it.z += dz; }
+      else if (cartLike) { it.x += dx; it.z += dz / 2; }
+    }
+    buildStand(); state.items.forEach(placeObj); refresh(); save();
+    const a = state.stand.w * state.stand.d, el = $('#sArea');
+    if (el) { el.textContent = `${fmt(a)} m²`; el.className = `chip ${a > 6.0001 ? 'bad' : 'ok'}`; }
+  };
+  $('#sW').addEventListener('input', standChange(() => { const v = num('sW'); if (!v || v < 0.5) return false; state.stand.w = v; }));
+  $('#sD').addEventListener('input', standChange(() => { const v = num('sD'); if (!v || v < 0.5) return false; state.stand.d = v; }));
+  $('#sP').addEventListener('input', standChange(() => { const v = num('sP'); if (v == null || v < 0) return false; state.stand.passage = v; }));
+  $('#sX').addEventListener('input', standChange(() => { const v = num('sX'); if (v == null) return false; state.stand.x = v; }));
+  $('#sPm').addEventListener('input', () => { const v = num('sPm'); if (v == null) return; state.stand.passageMin = v; renderChecks(); save(); });
+  $('#sFit').onclick = () => { standChange(() => { state.stand.d = Math.floor(600 / state.stand.w) / 100; })(); renderStandPane(); };
+  $('#eB').addEventListener('input', () => { const v = num('eB'); if (!v || v < 2) return; state.env.banner = v; buildEnv(); save(); });
+  $('#eA').addEventListener('input', () => { const v = num('eA'); if (!v || v < 4) return; state.env.aisle = v; buildEnv(); save(); });
+  $('#oBags').onchange = ev => { state.opts.bags = ev.target.checked; for (const [, g] of objById) g.userData.bagGroup.visible = state.opts.bags; renderChecks(); save(); };
+  $('#oLimit').onchange = ev => { state.opts.limit = ev.target.checked; if (limitGroup) limitGroup.visible = state.opts.limit; save(); };
+  $('#oCeil').onchange = ev => { state.opts.ceiling = ev.target.checked; save(); };
+  $('#oSnap').onchange = ev => { state.opts.snap = ev.target.checked; save(); };
+}
+
+/* ---------- Modèles prêts à l’emploi ---------- */
+function crates(S, sx, sz, rot, layers, over = {}) { const a = []; for (let i = 0; i < layers; i++) a.push(S('crate', sx, sz, rot, over)); return a; }
+const PRESETS = [
+  {
+    key: 'u', name: 'Îlot en U · mur de sacs, penderie, caisses',
+    desc: 'La configuration conseillée : une seule entrée côté allée, caisse devant, mur de sacs au fond face au passage chariots.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    items: (S) => [
+      S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
+      S('wall', 0, 0.15, 0, { color: 'creme', params: { faces: 1, rows: 3, spacing: 34 } }),
+      S('kallax', -1.305, 1.035, 90, { color: 'creme', params: { cols: 4, rows: 2 } }),
+      ...crates(S, -1.41, 0.55, 90, 2), ...crates(S, -1.41, 1.05, 90, 2), ...crates(S, -1.41, 1.55, 90, 2),
+      S('rail', 1.275, 0.9, -90, { params: { bars: 2, spacing: 16 } }),
+      S('mirror', 1.28, 1.76, -90),
+      S('counter', -0.45, 1.725, 0, { w: 120 }),
+      S('cube', -0.1, 0.9, 0, { w: 50, d: 50, h: 75, name: 'Socle pièce phare' }),
+      S('cube', 0.45, 0.95, 0, { w: 40, d: 40, h: 45 }),
+    ],
+  },
+  {
+    key: 'facade', name: 'Mur de sacs sur la vitrine + îlot',
+    desc: 'Le mur bleu devient un grand mur de sacs ; l’îlot reste dans l’allée avec le passage chariots entre les deux.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
+    items: (S, F) => [
+      F('wall', 0, 0.15, 0, { w: 420, color: 'noir', name: 'Mur de sacs (vitrine)', params: { faces: 1, rows: 3, spacing: 34 } }),
+      S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'creme' }),
+      S('steps', 0, 0.45, 0, { color: 'taupe' }),
+      S('peg', -1.3, 0.75, 90, { params: { faces: 2 } }),
+      S('peg', 1.3, 0.75, -90, { params: { faces: 2 } }),
+      S('counter', -0.55, 1.725, 0, { w: 110 }),
+      S('table', 0.35, 1.21, 0),
+      S('bust', 0.9, 1.6, 0),
+    ],
+  },
+  {
+    key: 'haussmann', name: 'Salon haussmannien',
+    desc: 'Moulures vert sauge, console et guéridon dorés, porte-sacs : moins de sacs, image très haut de gamme.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    items: (S) => [
+      S('rug', 0, 1.0, 0, { w: 280, d: 180, color: 'creme' }),
+      S('wall', 0, 0.15, 0, { color: 'sauge', params: { faces: 1, rows: 2, spacing: 40, moulures: true } }),
+      S('console', 0.7, 0.55, 0, { color: 'dore' }),
+      S('table', -0.35, 1.05, 0),
+      S('bust', -1.25, 0.6, 0), S('bust', -1.25, 1.05, 0),
+      S('mirror', 1.28, 1.25, -90),
+      S('counter', -0.85, 1.725, 0, { w: 100, color: 'creme' }),
+    ],
+  },
+  {
+    key: 'cave', name: 'Cave à sacs (caisses de vin)',
+    desc: 'Murs de caisses de vin peintes en noir : un sac par niche, budget minimum, effet boutique de créateur.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    items: (S) => {
+      const a = [S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'creme' })];
+      for (let c = 0; c < 6; c++) a.push(...crates(S, -1.25 + c * 0.5, 0.09, 0, 4));
+      for (const z of [0.45, 0.95, 1.45]) a.push(...crates(S, -1.41, z, 90, 3));
+      for (const z of [0.45, 0.95]) a.push(...crates(S, 1.41, z, -90, 3));
+      a.push(S('counter', 0.5, 1.725, 0, { w: 110, color: 'noir' }));
+      a.push(S('cube', 0, 0.85, 0, { w: 50, d: 50, h: 60, color: 'noir', name: 'Socle pièce phare' }));
+      a.push(S('cube', -0.5, 0.95, 0, { color: 'noir' }));
+      return a;
+    },
+  },
+  {
+    key: 'gradins', name: 'Gradins dos à dos (vue à 360°)',
+    desc: 'Pyramide centrale visible des deux côtés, penderies sur les flancs. Plus ouvert : à surveiller pour le vol.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    items: (S) => [
+      S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
+      S('steps', 0, 1.45, 0, { w: 140 }),
+      S('steps', 0, 0.55, 180, { w: 140 }),
+      S('rail', -1.27, 0.95, 90, { w: 100, params: { bars: 2, spacing: 16 } }),
+      S('rail', 1.27, 0.95, -90, { w: 100, params: { bars: 2, spacing: 16 } }),
+      S('counter', -1.1, 1.725, 0, { w: 70 }),
+      S('mirror', 1.15, 1.75, 0),
+    ],
+  },
+  {
+    key: 'noel', name: 'Hiver à Paris (version Noël)',
+    desc: 'L’îlot en U avec tapis bordeaux, sapin doré et paquets cadeaux au comptoir.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    items: (S) => [
+      S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'bordeaux' }),
+      S('wall', 0, 0.15, 0, { color: 'creme', params: { faces: 1, rows: 3, spacing: 34 } }),
+      S('kallax', -1.305, 1.035, 90, { color: 'creme', params: { cols: 4, rows: 2 } }),
+      ...crates(S, -1.41, 0.55, 90, 2, { color: 'bois' }), ...crates(S, -1.41, 1.05, 90, 2, { color: 'bois' }), ...crates(S, -1.41, 1.55, 90, 2, { color: 'bois' }),
+      S('rail', 1.275, 0.9, -90, { params: { bars: 2, spacing: 16 } }),
+      S('mirror', 1.28, 1.76, -90),
+      S('counter', -0.45, 1.725, 0, { w: 120 }),
+      S('cube', -0.1, 0.9, 0, { w: 50, d: 50, h: 75, name: 'Socle pièce phare' }),
+      S('tree', 0.5, 1.0, 0),
+    ],
+  },
+  { key: 'vide', name: 'Stand vide', desc: 'Repartir de zéro : juste la zone de 6 m², le passage et les repères.', stand: { w: 3, d: 2, x: 0, passage: 1.5 }, items: () => [] },
+];
+function applyPreset(key) {
+  const p = PRESETS.find(x => x.key === key); if (!p) return;
+  Object.assign(state.stand, p.stand);
+  state.items = []; nextId = 1;
+  const st = state.stand;
+  const S = (type, sx, sz, rot, over = {}) => makeItem(type, Object.assign({}, over, { x: st.x + sx, z: st.passage + sz, rot }));
+  const F = (type, x, z, rot, over = {}) => makeItem(type, Object.assign({}, over, { x: st.x + x, z, rot }));
+  for (const it of p.items(S, F)) { state.items.push(it); settle(it); }
+  const facadeFront = Math.max(0, ...state.items.filter(isFacade).map(i => bounds(i).z1));
+  state.items.push(makeItem('cart', { x: st.x + 0.9, z: facadeFront + (st.passage - facadeFront) / 2, rot: 90 }));
+  state.items.push(makeItem('person', { x: st.x - st.w / 2 - 0.45, z: st.passage + st.d + 0.45, rot: 180 }));
+  selectedId = null;
+  buildStand(); rebuildAll(); select(null); refresh(); save();
+  renderStandPane();
+  setView(viewMode === 'plan' ? 'plan' : '3d');
+}
+
+function readSlots() { try { return JSON.parse(localStorage.getItem(SLOTS_KEY) || '[]'); } catch (_) { return []; } }
+function writeSlots(a) { try { localStorage.setItem(SLOTS_KEY, JSON.stringify(a)); return true; } catch (_) { return false; } }
+let pendingPreset = null;
+function renderModelsPane() {
+  const slots = readSlots();
+  $('#paneModels').innerHTML = `
+    <div class="group"><h2>Modèles de stand</h2><p class="lead">Chaque modèle respecte 6 m², 1,50 m de haut et le passage chariots. Chargez-en un, puis modifiez-le.</p>
+      <div class="presets">${PRESETS.map(p => `<div class="preset"><strong>${esc(p.name)}</strong><p>${esc(p.desc)}</p><div class="row">${pendingPreset === p.key
+        ? `<span class="note">Remplacer la maquette actuelle ?</span><button type="button" class="btn small primary" data-ok="${p.key}">Oui, charger</button><button type="button" class="btn small" data-cancel>Annuler</button>`
+        : `<button type="button" class="btn small" data-preset="${p.key}">Charger ce modèle</button>`}</div></div>`).join('')}</div>
+    </div>
+    <div class="group"><h3>Mes versions</h3>
+      <div class="fields">${field('slotName', 'Nom de la version', '', { type: 'text', wide: true })}</div>
+      <div class="row"><button type="button" class="btn primary" id="slotSave">Enregistrer cette version</button></div>
+      ${slots.length ? `<ul class="list">${slots.map((s, i) => `<li><div class="row" style="justify-content:space-between"><span class="nm">${esc(s.name)} <span class="dm">${esc(s.date)}</span></span><span class="row"><button type="button" class="btn small" data-load="${i}">Ouvrir</button><button type="button" class="btn small danger" data-drop="${i}">Supprimer</button></span></div></li>`).join('')}</ul>` : '<p class="note">Aucune version enregistrée. Elles restent dans ce navigateur.</p>'}
+    </div>
+    <div class="group"><h3>Partager / sauvegarder ailleurs</h3>
+      <p class="note">Copiez le code de la maquette pour l’envoyer ou le garder, puis collez-le ici pour la retrouver sur un autre appareil.</p>
+      <textarea id="ioText" aria-label="Code de la maquette" placeholder="Collez ici un code de maquette"></textarea>
+      <div class="row"><button type="button" class="btn" id="ioCopy">Copier le code</button><button type="button" class="btn" id="ioLoad">Charger le code collé</button><span class="note" id="ioMsg"></span></div>
+    </div>
+    <div class="group"><h3>Image</h3><div class="row"><button type="button" class="btn" id="shot">Prendre une photo de la maquette</button></div></div>`;
+  const pane = $('#paneModels');
+  pane.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { pendingPreset = b.dataset.preset; renderModelsPane(); });
+  pane.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => { pendingPreset = null; applyPreset(b.dataset.ok); renderModelsPane(); });
+  pane.querySelectorAll('[data-cancel]').forEach(b => b.onclick = () => { pendingPreset = null; renderModelsPane(); });
+  $('#slotSave').onclick = () => {
+    const name = $('#slotName').value.trim() || `Version ${readSlots().length + 1}`;
+    const a = readSlots(); a.unshift({ name, date: new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }), data: serialize() });
+    if (!writeSlots(a)) { $('#slotName').value = 'Stockage indisponible dans ce navigateur'; return; }
+    renderModelsPane();
+  };
+  pane.querySelectorAll('[data-load]').forEach(b => b.onclick = () => { const s = readSlots()[+b.dataset.load]; if (s) loadData(s.data); });
+  pane.querySelectorAll('[data-drop]').forEach(b => b.onclick = () => { const a = readSlots(); a.splice(+b.dataset.drop, 1); writeSlots(a); renderModelsPane(); });
+  $('#ioCopy').onclick = () => {
+    const txt = JSON.stringify(serialize()); const ta = $('#ioText'); ta.value = txt;
+    const ok = () => $('#ioMsg').textContent = 'Code copié.';
+    const fallback = () => { ta.focus(); ta.select(); $('#ioMsg').textContent = 'Code sélectionné : copiez-le.'; };
+    try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (_) { fallback(); }
+  };
+  $('#ioLoad').onclick = () => {
+    try { loadData(JSON.parse($('#ioText').value)); $('#ioMsg').textContent = 'Maquette chargée.'; }
+    catch (_) { $('#ioMsg').textContent = 'Ce code n’est pas lisible : recopiez-le en entier.'; }
+  };
+  $('#shot').onclick = () => {
+    const sel = selDeco; if (sel) sel.visible = false;
+    renderer.render(scene, camera);
+    const url = canvas.toDataURL('image/jpeg', 0.92);
+    if (sel) sel.visible = true;
+    openModal('Photo de la maquette', url, 'Appui long (téléphone) ou clic droit (ordinateur) pour enregistrer l’image.');
+  };
+}
+function renderPhotosPane() {
+  $('#panePhotos').innerHTML = `<div class="group"><h2>Le lieu</h2><p class="lead">Les photos 1 et 5 servent de décor à la maquette (façade et caisses Carrefour). Touchez une photo pour l’agrandir.</p>
+    <div class="photos">${IMG.photos.map((src, i) => `<button type="button" data-photo="${i}"><img src="${src}" alt="${esc(PHOTO_CAPTIONS[i])}" loading="lazy"><span>${i + 1}. ${esc(PHOTO_CAPTIONS[i])}</span></button>`).join('')}</div></div>`;
+  $('#panePhotos').querySelectorAll('[data-photo]').forEach(b => b.onclick = () => { const i = +b.dataset.photo; openModal(`Photo ${i + 1}`, IMG.photos[i], PHOTO_CAPTIONS[i]); });
+}
+function openModal(title, src, note) { $('#modalTitle').textContent = title; $('#modalImg').src = src; $('#modalImg').alt = title; $('#modalNote').textContent = note || ''; $('#modal').hidden = false; }
+$('#modalClose').onclick = () => $('#modal').hidden = true;
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
+
+/* ---------- Sauvegarde ---------- */
+function serialize() { return { v: 1, stand: state.stand, env: state.env, opts: state.opts, items: state.items }; }
+let saveTimer = 0;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); } catch (_) { } }, 250); }
+function loadData(d) {
+  if (!d || !Array.isArray(d.items)) throw new Error('format');
+  const base = DEFAULT_STATE();
+  state = { stand: Object.assign(base.stand, d.stand), env: Object.assign(base.env, d.env), opts: Object.assign(base.opts, d.opts), items: [] };
+  nextId = 1;
+  for (const raw of d.items) {
+    if (!CATALOG[raw.type]) continue;
+    const it = makeItem(raw.type, raw);
+    it.id = nextId++;
+    state.items.push(it);
+  }
+  selectedId = null;
+  buildEnv(); buildStand(); rebuildAll(); select(null); refresh(); save();
+  renderStandPane(); setView(viewMode);
+}
+
+/* ---------- Boucle de rendu ---------- */
+function loop(t) {
+  requestAnimationFrame(loop);
+  if (tween) {
+    const k = Math.min(1, (t - tween.t0) / tween.dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    persp.position.lerpVectors(tween.from.pos, tween.to.pos, e);
+    controls.target.lerpVectors(tween.from.tgt, tween.to.tgt, e);
+    if (k >= 1) tween = null;
+  }
+  controls.update();
+  ceilingGroup.visible = state.opts.ceiling && camera === persp && persp.position.y < 4.2;
+  renderer.render(scene, camera);
+}
+
+/* ---------- Démarrage ---------- */
+async function start() {
+  try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch (_) { }
+  [facadeTex, carrefourTex] = await Promise.all([loadTex(IMG.facade), loadTex(IMG.carrefour)]);
+  renderAddPane(); renderPhotosPane(); renderModelsPane();
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (_) { }
+  resize();
+  buildEnv();
+  if (saved && saved.items) { try { loadData(saved); } catch (_) { applyPreset('u'); } }
+  else applyPreset('u');
+  renderStandPane();
+  setView('3d', true);
+  $('#loading').hidden = true;
+  requestAnimationFrame(loop);
+}
+start();
+})();
+</script>
