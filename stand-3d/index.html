@@ -113,6 +113,7 @@ button { cursor: pointer; }
 .cat .d { font-family: var(--f-mono); font-size: 11.5px; color: var(--camel); font-variant-numeric: tabular-nums; }
 .cat .p { font-size: 11.5px; color: var(--muted); }
 
+
 /* Formulaires */
 .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px 10px; }
 .field { display: grid; gap: 3px; min-width: 0; }
@@ -259,7 +260,7 @@ const PHOTO_CAPTIONS = [
 const FACADE_PX = { w: 2000, h: 373, bannerL: 729, bannerR: 1239 };
 const CARREFOUR_PX = { w: 2000, h: 430 };
 const LIMIT_H = 150; // cm
-const STORE_KEY = 'flora-stand-v1';
+const STORE_KEY = 'flora-stand-v2';
 const SLOTS_KEY = 'flora-stand-slots-v1';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -286,7 +287,9 @@ const P = {
   bars: { key: 'bars', label: 'Barres', type: 'select', options: [[1, '1 barre'], [2, '2 barres']] },
   spacing: { key: 'spacing', label: 'Écart entre sacs (cm)', type: 'number', min: 10, max: 60 },
   faces: { key: 'faces', label: 'Faces', type: 'select', options: [[1, '1 face'], [2, '2 faces']] },
-  rows: { key: 'rows', label: 'Rangées de sacs', type: 'select', options: [[1, '1'], [2, '2'], [3, '3']] },
+  rows: { key: 'rows', label: 'Rangées de sacs', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6']] },
+  shape: { key: 'shape', label: 'Forme', type: 'select', options: [['bloc', 'Bloc plein'], ['etagere', 'Étagère ouverte'], ['table', 'Table'], ['caisse', 'Niche / caisse'], ['portant', 'Portant'], ['panneau', 'Panneau à crochets']] },
+  shelves: { key: 'shelves', label: 'Niveaux', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] },
   moulures: { key: 'moulures', label: 'Moulures haussmanniennes', type: 'bool' },
   logo: { key: 'logo', label: 'Logo Flora & Co', type: 'bool' },
   cols: { key: 'cols', label: 'Colonnes de cases', type: 'select', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4']] },
@@ -304,6 +307,15 @@ const CATALOG = {
   steps: { name: 'Gradins', group: 'Présentoirs à sacs', w: 120, d: 90, h: 90, color: 'creme', price: 70, params: { steps: 3 }, schema: [P.steps], desc: 'Marches en MDF peint' },
   cube: { name: 'Cube / socle', group: 'Présentoirs à sacs', w: 40, d: 40, h: 40, color: 'creme', price: 15, desc: 'Pour la pièce phare · empilable' },
   bust: { name: 'Porte-sac sur pied', group: 'Présentoirs à sacs', w: 30, d: 30, h: 120, color: 'dore', price: 20, desc: 'Un sac mis en valeur' },
+  shelf: { name: 'Étagère ouverte 3 niveaux', group: 'Meubles de base', shape: 'etagere', w: 80, d: 35, h: 120, color: 'bois', price: 35, params: { shelves: 3 }, schema: [P.shelves], desc: 'Bibliothèque sans portes' },
+  shelfLow: { name: 'Meuble bas 2 niveaux', group: 'Meubles de base', shape: 'etagere', w: 120, d: 40, h: 80, color: 'blanc', price: 40, params: { shelves: 2 }, schema: [P.shelves], desc: 'Buffet ouvert, sacs dedans et dessus' },
+  tableRect: { name: 'Table rectangulaire', group: 'Meubles de base', shape: 'table', w: 120, d: 60, h: 75, color: 'bois', price: 30, desc: 'Sacs posés dessus' },
+  tableHigh: { name: 'Table haute', group: 'Meubles de base', shape: 'table', w: 80, d: 50, h: 100, color: 'noir', price: 35, desc: 'Mange-debout, pièces phares' },
+  bench: { name: 'Banc', group: 'Meubles de base', shape: 'bloc', w: 100, d: 35, h: 45, color: 'chene', price: 25, desc: 'Sacs alignés dessus' },
+  trunk: { name: 'Malle / coffre', group: 'Meubles de base', shape: 'bloc', w: 70, d: 40, h: 45, color: 'chocolat', price: 25, desc: 'Look vintage · empilable' },
+  stool: { name: 'Tabouret / sellette', group: 'Meubles de base', shape: 'bloc', w: 35, d: 35, h: 65, color: 'bois', price: 12, desc: 'Un sac en hauteur' },
+  cagette: { name: 'Cagette', group: 'Meubles de base', shape: 'caisse', w: 50, d: 30, h: 28, color: 'bois', price: 2, desc: 'Sur la tranche · empilable' },
+  pallet: { name: 'Palette debout', group: 'Meubles de base', shape: 'panneau', w: 120, d: 25, h: 100, color: 'bois', price: 10, desc: 'Palette 120 × 100 avec crochets' },
   counter: { name: 'Comptoir caisse', group: 'Mobilier', w: 120, d: 55, h: 100, color: 'bois', price: 90, params: { logo: true }, schema: [P.logo], desc: 'Caisse + paquets cadeaux' },
   console: { name: 'Console', group: 'Mobilier', w: 110, d: 38, h: 80, color: 'noir', price: 40, desc: 'Plateau + tablette basse' },
   table: { name: 'Guéridon rond', group: 'Mobilier', w: 60, d: 60, h: 70, color: 'dore', price: 30, desc: 'Ø 60 cm' },
@@ -313,15 +325,20 @@ const CATALOG = {
   rug: { name: 'Tapis', group: 'Déco', w: 280, d: 180, h: 1, color: 'creme', price: 40, desc: 'Délimite le stand' },
   tree: { name: 'Sapin de Noël', group: 'Déco', w: 60, d: 60, h: 90, color: 'creme', price: 25, desc: 'Avec pot et boules dorées · empilable' },
   cart: { name: 'Chariot (repère)', group: 'Repères d’échelle', w: 56, d: 95, h: 100, color: 'noir', price: 0, ref: true, desc: 'Pour tester le passage' },
+  custom: { name: 'Mon meuble', group: 'Mes meubles', hidden: true, w: 80, d: 40, h: 90, color: 'bois', price: 0, params: { shape: 'etagere', shelves: 3 }, schema: [P.shape, P.shelves], desc: 'Meuble créé par vous' },
   person: { name: 'Personne 1,65 m (repère)', group: 'Repères d’échelle', w: 45, d: 30, h: 165, color: 'noir', price: 0, ref: true, desc: 'Pour juger des hauteurs' },
 };
 const STACK_SOURCES = new Set(['crate', 'cube', 'kallax', 'storage', 'tree', 'bust']);
 const STACK_TARGETS = new Set(['crate', 'cube', 'kallax', 'storage', 'counter', 'console', 'table']);
+const CUSTOM_STACK = new Set(['bloc', 'etagere', 'table', 'caisse']);
+const shapeOf = it => it.type === 'custom' ? it.params.shape : (CATALOG[it.type] && CATALOG[it.type].shape);
+const canBeStacked = it => STACK_SOURCES.has(it.type) || CUSTOM_STACK.has(shapeOf(it));
+const canHold = it => STACK_TARGETS.has(it.type) || CUSTOM_STACK.has(shapeOf(it));
 
 /* ---------- État ---------- */
 const DEFAULT_STATE = () => ({
-  stand: { w: 3, d: 2, x: 0, passage: 1.5, passageMin: 1.4 },
-  env: { banner: 4.6, aisle: 9 },
+  stand: { w: 3, d: 2, x: 0, passage: 1.8, passageMin: 1.4 },
+  env: { banner: 4.6, aisle: 9, wallLimit: 2.4 },
   opts: { bags: true, limit: true, ceiling: true, snap: true },
   items: [],
 });
@@ -382,10 +399,10 @@ const isFacade = it => !isRef(it) && bounds(it).z0 <= 0.06 && it.z < state.stand
 // pool : objets sur lesquels on peut se poser ; exclude : objets posés sur celui qu'on déplace
 function settle(it, pool = state.items, exclude = null) {
   if (!it.autoElev) return;
-  if (!STACK_SOURCES.has(it.type)) { it.elev = 0; return; }
+  if (!canBeStacked(it)) { it.elev = 0; return; }
   let e = 0;
   for (const o of pool) {
-    if (o === it || (exclude && exclude.has(o)) || !STACK_TARGETS.has(o.type)) continue;
+    if (o === it || (exclude && exclude.has(o)) || !canHold(o)) continue;
     if (!inside(it.x, it.z, o, -0.005)) continue;
     e = Math.max(e, o.elev + o.h);
   }
@@ -691,6 +708,8 @@ function makeBag(hex, s = 1) {
 }
 
 function buildItem(it) {
+  // meubles de base : même construction que le type générique, selon leur forme
+  if (CATALOG[it.type] && CATALOG[it.type].shape) it = Object.assign({}, it, { type: 'custom', params: Object.assign({ shape: CATALOG[it.type].shape }, it.params) });
   const g = new THREE.Group();
   const w = it.w / 100, d = it.d / 100, h = it.h / 100;
   const m = mat(it.color);
@@ -736,7 +755,35 @@ function buildItem(it) {
     const o = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), mm); o.position.set(x, y, z); o.rotation.y = ry; g.add(o);
   };
 
+  if (it.type === 'custom' && (it.params.shape === 'portant' || it.params.shape === 'panneau' || it.params.shape === 'caisse')) {
+    const alias = { portant: ['rail', { bars: 1, spacing: 16 }], panneau: ['wall', { faces: 1, rows: 3, spacing: 34 }], caisse: ['crate', {}] }[it.params.shape];
+    return buildItem(Object.assign({}, it, { type: alias[0], params: alias[1] }));
+  }
   switch (it.type) {
+    case 'custom': {
+      const shape = it.params.shape;
+      if (shape === 'bloc') {
+        box(w, h, d, m, 0, h / 2, 0);
+        const n = Math.max(1, Math.floor(w / 0.34));
+        for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.34) / 2 + i * 0.34, h, 0, Math.min(1, Math.max(0.6, (w - 0.04) / 0.3)));
+      } else if (shape === 'table') {
+        box(w, 0.03, d, m, 0, h - 0.015, 0);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(0.04, h - 0.03, 0.04, m, sx * (w / 2 - 0.04), (h - 0.03) / 2, sz * (d / 2 - 0.04));
+        const n = Math.max(1, Math.floor(w / 0.34));
+        for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.34) / 2 + i * 0.34, h, 0, 1);
+      } else {
+        // étagère ouverte : côtés, dos, N plateaux, sacs sur chaque niveau
+        const t = 0.018, N = Math.max(1, +it.params.shelves || 3);
+        box(t, h, d, m, -w / 2 + t / 2, h / 2, 0); box(t, h, d, m, w / 2 - t / 2, h / 2, 0);
+        box(w, h, 0.008, mat(it.color, { shade: 0.12 }), 0, h / 2, -d / 2 + 0.004);
+        const gap = (h - t) / N;
+        for (let k = 0; k <= N; k++) box(w - 2 * t, t, d, m, 0, Math.min(k * gap + t / 2, h - t / 2), 0);
+        const s = Math.min(1, (gap - t - 0.02) / BAG_H, (d - 0.02) / 0.13);
+        const n = Math.max(1, Math.floor((w - 2 * t) / 0.34));
+        if (s > 0.3) for (let k = 0; k < N; k++) for (let i = 0; i < n; i++) addBag(-((n - 1) * 0.34) / 2 + i * 0.34, k * gap + t, 0, s);
+      }
+      break;
+    }
     case 'rail': {
       const r = 0.012;
       for (const sx of [-1, 1]) { const px = sx * (w / 2 - r); cyl(r, r, h, m, px, h / 2, 0, 10); box(0.03, 0.02, d, m, px, 0.01, 0); }
@@ -1208,7 +1255,7 @@ function duplicateSel() {
   c.name = it.name;
   const b = bounds(it);
   c.x = Math.round((it.x + (b.x1 - b.x0) + 0.02) * 100) / 100;
-  if (STACK_SOURCES.has(it.type)) c.x = it.x, c.z = it.z; // les caisses / cubes se dupliquent en pile
+  if (canBeStacked(it)) c.x = it.x, c.z = it.z; // les caisses / cubes se dupliquent en pile
   state.items.push(c);
   settle(c);
   rebuildItem(c);
@@ -1238,7 +1285,12 @@ function computeChecks() {
   const area = s.w * s.d;
   // Hauteur
   let maxH = 0, maxItem = null, maxBag = 0;
-  for (const it of real) {
+  const wallMax = state.env.wallLimit * 100;
+  for (const it of facade) {
+    const top = it.elev + it.h;
+    if (top > wallMax + 0.4) issues.push(['bad', `${it.name} monte à ${Math.round(top)} cm (autorisé : ${Math.round(wallMax)} cm)`, it.id]);
+  }
+  for (const it of inStand) {
     if (it.type === 'rug') continue;
     const top = it.elev + it.h;
     if (top > maxH) { maxH = top; maxItem = it; }
@@ -1268,7 +1320,7 @@ function computeChecks() {
     if (v > 1 && obbOverlap(a, b)) issues.push(['warn', `${a.name} et ${b.name} se chevauchent`, a.id]);
   }
   if (area > 6.0001) issues.push(['bad', `Surface ${fmt(area)} m² : au-delà des 6 m² loués`]);
-  if (facade.length) issues.push(['warn', `${facade.map(i => i.name).join(', ')} contre la vitrine : à valider avec la galerie`]);
+  if (facade.length) issues.push(['warn', `Mur de sacs sur la vitrine : faire valider sa hauteur (${fmt(state.env.wallLimit)} m) par la galerie`]);
   let bags = 0, budget = 0, foot = 0;
   for (const it of real) {
     const st = statsById.get(it.id); bags += st ? st.bags : 0; budget += +it.price || 0;
@@ -1307,8 +1359,9 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => setTab(
 
 function renderAddPane() {
   const groups = {};
-  for (const [k, c] of Object.entries(CATALOG)) (groups[c.group] = groups[c.group] || []).push([k, c]);
-  $('#paneAdd').innerHTML = `<p class="lead">Touchez un élément pour l’ajouter au stand, puis glissez-le dans la 3D. Les cotes sont les tailles réelles, modifiables ensuite.</p>` +
+  for (const g of ['Meubles de base', 'Présentoirs à sacs', 'Mobilier', 'Déco', 'Repères d’échelle']) groups[g] = [];
+  for (const [k, c] of Object.entries(CATALOG)) if (!c.hidden) (groups[c.group] = groups[c.group] || []).push([k, c]);
+  $('#paneAdd').innerHTML = `<p class="lead">Touchez un meuble pour l’ajouter au stand, puis glissez-le dans la 3D. Les cotes sont des tailles standard, modifiables ensuite dans l’onglet Objet.</p>` +
     Object.entries(groups).map(([g, arr]) => `<div class="group"><h3>${esc(g)}</h3><div class="cat">${arr.map(([k, c]) => {
       const it = makeItemPreview(k);
       return `<button type="button" data-add="${k}"><span class="n">${esc(c.name)}</span><span class="d">${it.w} × ${it.d} × ${it.h} cm</span><span class="p">${esc(c.desc)}${c.price ? ` · ≈ ${c.price} €` : ''}</span></button>`;
@@ -1350,6 +1403,7 @@ function renderItemPane() {
       <p class="note">Positions mesurées au centre du meuble, depuis le coin du stand côté vitrine et côté Mister Minit.</p></div>
       ${isRef(it) ? '' : `<div class="group"><h3>Couleur / matière</h3><div class="swatches">${Object.entries(PALETTE).map(([k, p]) => `<button type="button" data-color="${k}" title="${p.label}" aria-label="${p.label}" aria-pressed="${k === it.color}" style="background:${p.color}"></button>`).join('')}</div></div>
       <div class="group"><div class="fields">${field('fN', 'Nom', it.name, { type: 'text', wide: true })}${field('fP', 'Prix estimé (€)', it.price, { min: 0 })}</div></div>`}
+      ${isFacade(it) ? `<div class="row"><button type="button" class="btn small" id="bFit">Caler sur toute la vitrine (${fmt(state.env.banner)} m)</button></div>` : ''}
       <div class="row"><button type="button" class="btn" id="bRot">Pivoter 90°</button><button type="button" class="btn" id="bDup">Dupliquer</button><button type="button" class="btn danger" id="bDel">Supprimer</button></div>`;
   }
   html += `<div class="group"><h3>Tous les éléments (${state.items.length})</h3><ul class="list" id="itemList"></ul></div>`;
@@ -1389,6 +1443,8 @@ function renderItemPane() {
   $('#bRot').onclick = () => rotateSel(90);
   $('#bDup').onclick = duplicateSel;
   $('#bDel').onclick = () => removeItem(it.id);
+  const bFit = $('#bFit');
+  if (bFit) bFit.onclick = () => { it.w = Math.round(state.env.banner * 100); it.x = 0; it.rot = 0; it.z = it.d / 200; rebuildItem(it); refresh(); save(); renderItemPane(); };
 }
 function paramField(it, p) {
   const v = it.params[p.key];
@@ -1425,14 +1481,15 @@ function renderStandPane() {
         ${field('sPm', 'Minimum exigé (m)', s.passageMin, { step: 0.05, min: 0 })}
         ${field('sX', 'Décalage latéral (m)', s.x, { step: 0.05 })}
       </div>
-      <p class="note">Le passage se mesure entre la vitrine (ou ce qui y est posé) et le stand. Le décalage déplace le stand le long de la vitrine (négatif = vers Mister Minit). Les meubles suivent.</p>
+      <p class="note">Le passage se mesure entre le mur de sacs et le stand (comptez 30 cm de mur + le passage). Le décalage déplace le stand le long de la vitrine (négatif = vers Mister Minit). Les meubles suivent.</p>
     </div>
     <div class="group"><h3>Calibrer le décor</h3>
       <div class="fields">
         ${field('eB', 'Largeur de la vitrine bleue (m)', e.banner, { step: 0.05, min: 2 })}
         ${field('eA', 'Distance vitrine → caisses Carrefour (m)', e.aisle, { step: 0.25, min: 4 })}
+        ${field('eW', 'Hauteur autorisée du mur de sacs (m)', e.wallLimit, { step: 0.05, min: 0.5 })}
       </div>
-      <p class="note">Valeurs estimées d’après vos photos. Mesurez-les sur place : le décor photo se recale tout seul à la bonne échelle.</p>
+      <p class="note">Valeurs estimées d’après vos photos. Mesurez-les sur place : le décor photo se recale tout seul à la bonne échelle. La hauteur du mur de sacs (2,40 m = hauteur de la bâche) est à confirmer avec la galerie.</p>
     </div>
     <div class="group"><h3>Affichage</h3>
       <label class="check"><input type="checkbox" id="oBags" ${o.bags ? 'checked' : ''}> Montrer les sacs</label>
@@ -1465,6 +1522,7 @@ function renderStandPane() {
   $('#sFit').onclick = () => { standChange(() => { state.stand.d = Math.floor(600 / state.stand.w) / 100; })(); renderStandPane(); };
   $('#eB').addEventListener('input', () => { const v = num('eB'); if (!v || v < 2) return; state.env.banner = v; buildEnv(); save(); });
   $('#eA').addEventListener('input', () => { const v = num('eA'); if (!v || v < 4) return; state.env.aisle = v; buildEnv(); save(); });
+  $('#eW').addEventListener('input', () => { const v = num('eW'); if (!v || v < 0.5) return; state.env.wallLimit = v; renderChecks(); save(); });
   $('#oBags').onchange = ev => { state.opts.bags = ev.target.checked; for (const [, g] of objById) g.userData.bagGroup.visible = state.opts.bags; renderChecks(); save(); };
   $('#oLimit').onchange = ev => { state.opts.limit = ev.target.checked; if (limitGroup) limitGroup.visible = state.opts.limit; save(); };
   $('#oCeil').onchange = ev => { state.opts.ceiling = ev.target.checked; save(); };
@@ -1476,8 +1534,8 @@ function crates(S, sx, sz, rot, layers, over = {}) { const a = []; for (let i = 
 const PRESETS = [
   {
     key: 'u', name: 'Îlot en U · mur de sacs, penderie, caisses',
-    desc: 'La configuration conseillée : une seule entrée côté allée, caisse devant, mur de sacs au fond face au passage chariots.',
-    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    desc: 'Conseillé : le grand mur de sacs remplace la bâche, et l’îlot en U n’a qu’une entrée côté allée, caisse devant.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => [
       S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
       S('wall', 0, 0.15, 0, { color: 'creme', params: { faces: 1, rows: 3, spacing: 34 } }),
@@ -1491,11 +1549,10 @@ const PRESETS = [
     ],
   },
   {
-    key: 'facade', name: 'Mur de sacs sur la vitrine + îlot',
-    desc: 'Le mur bleu devient un grand mur de sacs ; l’îlot reste dans l’allée avec le passage chariots entre les deux.',
+    key: 'facade', name: 'Îlot ouvert · gradins et panneaux perforés',
+    desc: 'Le mur de sacs sur la vitrine, et un îlot plus ouvert : gradins au centre, panneaux perforés double face sur les côtés.',
     stand: { w: 3, d: 2, x: 0, passage: 1.8 },
-    items: (S, F) => [
-      F('wall', 0, 0.15, 0, { w: 420, color: 'noir', name: 'Mur de sacs (vitrine)', params: { faces: 1, rows: 3, spacing: 34 } }),
+    items: (S) => [
       S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'creme' }),
       S('steps', 0, 0.45, 0, { color: 'taupe' }),
       S('peg', -1.3, 0.75, 90, { params: { faces: 2 } }),
@@ -1506,9 +1563,9 @@ const PRESETS = [
     ],
   },
   {
-    key: 'haussmann', name: 'Salon haussmannien',
+    key: 'haussmann', name: 'Salon haussmannien', wallColor: 'sauge', wallMoulures: true,
     desc: 'Moulures vert sauge, console et guéridon dorés, porte-sacs : moins de sacs, image très haut de gamme.',
-    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => [
       S('rug', 0, 1.0, 0, { w: 280, d: 180, color: 'creme' }),
       S('wall', 0, 0.15, 0, { color: 'sauge', params: { faces: 1, rows: 2, spacing: 40, moulures: true } }),
@@ -1521,8 +1578,8 @@ const PRESETS = [
   },
   {
     key: 'cave', name: 'Cave à sacs (caisses de vin)',
-    desc: 'Murs de caisses de vin peintes en noir : un sac par niche, budget minimum, effet boutique de créateur.',
-    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    desc: 'Îlot en caisses de vin peintes en noir face au mur de sacs : un sac par niche, budget minimum.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => {
       const a = [S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'creme' })];
       for (let c = 0; c < 6; c++) a.push(...crates(S, -1.25 + c * 0.5, 0.09, 0, 4));
@@ -1537,7 +1594,7 @@ const PRESETS = [
   {
     key: 'gradins', name: 'Gradins dos à dos (vue à 360°)',
     desc: 'Pyramide centrale visible des deux côtés, penderies sur les flancs. Plus ouvert : à surveiller pour le vol.',
-    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => [
       S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
       S('steps', 0, 1.45, 0, { w: 140 }),
@@ -1551,7 +1608,7 @@ const PRESETS = [
   {
     key: 'noel', name: 'Hiver à Paris (version Noël)',
     desc: 'L’îlot en U avec tapis bordeaux, sapin doré et paquets cadeaux au comptoir.',
-    stand: { w: 3, d: 2, x: 0, passage: 1.5 },
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => [
       S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'bordeaux' }),
       S('wall', 0, 0.15, 0, { color: 'creme', params: { faces: 1, rows: 3, spacing: 34 } }),
@@ -1564,7 +1621,7 @@ const PRESETS = [
       S('tree', 0.5, 1.0, 0),
     ],
   },
-  { key: 'vide', name: 'Stand vide', desc: 'Repartir de zéro : juste la zone de 6 m², le passage et les repères.', stand: { w: 3, d: 2, x: 0, passage: 1.5 }, items: () => [] },
+  { key: 'vide', name: 'Stand vide', desc: 'Repartir de zéro : le mur de sacs, la zone de 6 m², le passage et les repères.', stand: { w: 3, d: 2, x: 0, passage: 1.8 }, items: () => [] },
 ];
 function applyPreset(key) {
   const p = PRESETS.find(x => x.key === key); if (!p) return;
@@ -1572,7 +1629,9 @@ function applyPreset(key) {
   state.items = []; nextId = 1;
   const st = state.stand;
   const S = (type, sx, sz, rot, over = {}) => makeItem(type, Object.assign({}, over, { x: st.x + sx, z: st.passage + sz, rot }));
-  const F = (type, x, z, rot, over = {}) => makeItem(type, Object.assign({}, over, { x: st.x + x, z, rot }));
+  const F = (type, x, z, rot, over = {}) => makeItem(type, Object.assign({}, over, { x, z, rot }));
+  // le mur de sacs remplace la bâche bleue de la vitrine
+  state.items.push(F('wall', 0, 0.15, 0, { w: Math.round(state.env.banner * 100), h: Math.round(state.env.wallLimit * 100), color: p.wallColor || 'noir', name: 'Mur de sacs (à la place de la bâche)', params: { faces: 1, rows: 5, spacing: 34, moulures: !!p.wallMoulures } }));
   for (const it of p.items(S, F)) { state.items.push(it); settle(it); }
   const facadeFront = Math.max(0, ...state.items.filter(isFacade).map(i => bounds(i).z1));
   state.items.push(makeItem('cart', { x: st.x + 0.9, z: facadeFront + (st.passage - facadeFront) / 2, rot: 90 }));
@@ -1645,7 +1704,7 @@ $('#modalClose').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
 
 /* ---------- Sauvegarde ---------- */
-function serialize() { return { v: 1, stand: state.stand, env: state.env, opts: state.opts, items: state.items }; }
+function serialize() { return { v: 2, stand: state.stand, env: state.env, opts: state.opts, items: state.items }; }
 let saveTimer = 0;
 function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); } catch (_) { } }, 250); }
 function loadData(d) {
