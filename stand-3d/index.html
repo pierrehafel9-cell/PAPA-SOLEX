@@ -282,6 +282,7 @@ const PALETTE = {
   dore: { label: 'Laiton doré', color: '#c9a254', metal: true },
 };
 const BAG_COLORS = ['#1f1b19', '#4c2d21', '#a9713f', '#8d7c6c', '#5d1f27', '#e2d4c0', '#6c4b36', '#2f2a33'];
+const ACC_COLORS = ['#c9a254', '#5d1f27', '#e2d4c0', '#a9713f', '#1f1b19', '#8d7c6c', '#d9b2a6', '#4c2d21'];
 
 const P = {
   bars: { key: 'bars', label: 'Barres', type: 'select', options: [[1, '1 barre'], [2, '2 barres']] },
@@ -316,6 +317,10 @@ const CATALOG = {
   stool: { name: 'Tabouret / sellette', group: 'Meubles de base', shape: 'bloc', w: 35, d: 35, h: 65, color: 'bois', price: 12, desc: 'Un sac en hauteur' },
   cagette: { name: 'Cagette', group: 'Meubles de base', shape: 'caisse', w: 50, d: 30, h: 28, color: 'bois', price: 2, desc: 'Sur la tranche · empilable' },
   pallet: { name: 'Palette debout', group: 'Meubles de base', shape: 'panneau', w: 120, d: 25, h: 100, color: 'bois', price: 10, desc: 'Palette 120 × 100 avec crochets' },
+  accTray: { name: 'Plateau porte-monnaie', group: 'Petits articles (panier moyen)', w: 40, d: 25, h: 4, color: 'creme', price: 10, desc: '6 porte-monnaie · se pose sur une étagère' },
+  accRiser: { name: 'Gradin mini-sacs & pochettes', group: 'Petits articles (panier moyen)', w: 40, d: 25, h: 15, color: 'bois', price: 12, desc: '2 mini-sacs + 3 pochettes' },
+  accClips: { name: 'Carte pinces à cheveux', group: 'Petits articles (panier moyen)', w: 22, d: 12, h: 28, color: 'creme', price: 6, desc: '12 pinces sur présentoir chevalet' },
+  accKeys: { name: 'Arbre porte-clés', group: 'Petits articles (panier moyen)', w: 20, d: 20, h: 32, color: 'dore', price: 12, desc: '12 porte-clés suspendus' },
   counter: { name: 'Comptoir caisse', group: 'Mobilier', w: 120, d: 55, h: 100, color: 'bois', price: 90, params: { logo: true }, schema: [P.logo], desc: 'Caisse + paquets cadeaux' },
   console: { name: 'Console', group: 'Mobilier', w: 110, d: 38, h: 80, color: 'noir', price: 40, desc: 'Plateau + tablette basse' },
   table: { name: 'Guéridon rond', group: 'Mobilier', w: 60, d: 60, h: 70, color: 'dore', price: 30, desc: 'Ø 60 cm' },
@@ -329,7 +334,7 @@ const CATALOG = {
   custom: { name: 'Mon meuble', group: 'Mes meubles', hidden: true, w: 80, d: 40, h: 90, color: 'bois', price: 0, params: { shape: 'etagere', shelves: 3 }, schema: [P.shape, P.shelves], desc: 'Meuble créé par vous' },
   person: { name: 'Personne 1,65 m (repère)', group: 'Repères d’échelle', w: 45, d: 30, h: 165, color: 'noir', price: 0, ref: true, desc: 'Pour juger des hauteurs' },
 };
-const STACK_SOURCES = new Set(['crate', 'cube', 'kallax', 'storage', 'tree', 'bust']);
+const STACK_SOURCES = new Set(['crate', 'cube', 'kallax', 'storage', 'tree', 'bust', 'accTray', 'accRiser', 'accClips', 'accKeys']);
 const STACK_TARGETS = new Set(['crate', 'cube', 'kallax', 'storage', 'counter', 'console', 'table']);
 const CUSTOM_STACK = new Set(['bloc', 'etagere', 'table', 'caisse']);
 const shapeOf = it => it.type === 'custom' ? it.params.shape : (CATALOG[it.type] && CATALOG[it.type].shape);
@@ -718,7 +723,27 @@ function buildItem(it) {
   const w = it.w / 100, d = it.d / 100, h = it.h / 100;
   const m = mat(it.color);
   const bags = new THREE.Group(); g.add(bags);
-  let nBags = 0, bagTop = 0;
+  let nBags = 0, bagTop = 0, nAcc = 0;
+  // petit article : porte-monnaie, pince, porte-clés, mini-sac
+  const accCol = () => ACC_COLORS[(it.id * 3 + nAcc * 5) % ACC_COLORS.length];
+  const addAcc = (o, top) => { bags.add(o); nAcc++; bagTop = Math.max(bagTop, top); };
+  const wallet = (x, y, z, tilt = -0.35) => {
+    const o = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.075, 0.022), bagMat(accCol())); b.position.y = 0.0375; b.castShadow = true; o.add(b);
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.012, 0.026), mat('dore')); c.position.y = 0.07; o.add(c);
+    o.position.set(x, y, z); o.rotation.x = tilt; addAcc(o, y + 0.08);
+  };
+  const miniBag = (x, y, z) => { const b = makeBag(accCol(), 0.45); b.position.set(x, y, z); addAcc(b, y + BAG_H * 0.45); };
+  const clip = (x, y, z) => {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.012), new THREE.MeshStandardMaterial({ color: accCol(), roughness: 0.35, metalness: 0.2 }));
+    o.material.userData.own = true; o.position.set(x, y, z); addAcc(o, y + 0.01);
+  };
+  const keychain = (x, y, z) => {
+    const o = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.011, 0.0022, 6, 14), mat('dore')); ring.position.y = -0.011; o.add(ring);
+    const charm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.04, 0.008), bagMat(accCol())); charm.position.y = -0.045; charm.castShadow = true; o.add(charm);
+    o.position.set(x, y, z); addAcc(o, y);
+  };
   const addBag = (x, y, z, s = 1, ry = 0) => {
     const b = makeBag(BAG_COLORS[(it.id * 5 + nBags * 3) % BAG_COLORS.length], s);
     b.position.set(x, y, z); b.rotation.y = ry; bags.add(b);
@@ -927,6 +952,47 @@ function buildItem(it) {
       if (w >= 0.7) { addBag(-0.16, h, 0, 1, 0.3); addBag(0.16, h, 0.02, 0.9, -0.3); } else addBag(0, h, 0, Math.min(1, w / 0.4));
       break;
     }
+    case 'accTray': {
+      box(w, 0.012, d, m, 0, 0.006, 0);
+      for (const sz of [-1, 1]) box(w, h, 0.01, m, 0, h / 2, sz * (d / 2 - 0.005));
+      for (const sx of [-1, 1]) box(0.01, h, d, m, sx * (w / 2 - 0.005), h / 2, 0);
+      const cols = Math.max(1, Math.floor((w - 0.02) / 0.125)), rows = Math.max(1, Math.floor((d - 0.02) / 0.1));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+        wallet(-((cols - 1) * 0.125) / 2 + c * 0.125, 0.012, -((rows - 1) * 0.1) / 2 + r * 0.1 + 0.01);
+      break;
+    }
+    case 'accRiser': {
+      box(w, h / 2, d / 2, m, 0, h / 4, d / 4);
+      box(w, h, d / 2, m, 0, h / 2, -d / 4);
+      const nb = Math.max(1, Math.floor(w / 0.17));
+      for (let i = 0; i < nb; i++) miniBag(-((nb - 1) * 0.17) / 2 + i * 0.17, h, -d / 4);
+      const nw = Math.max(1, Math.floor(w / 0.125));
+      for (let i = 0; i < nw; i++) wallet(-((nw - 1) * 0.125) / 2 + i * 0.125, h / 2, d / 4, -0.2);
+      break;
+    }
+    case 'accClips': {
+      box(w, h - 0.02, 0.008, m, 0, h / 2 + 0.01, 0);
+      box(w, 0.02, d, m, 0, 0.01, 0);
+      box(0.02, h * 0.8, 0.012, m, 0, h * 0.42, -d / 2 + 0.02).rotation.x = 0.25;
+      const cols = Math.max(1, Math.floor((w - 0.02) / 0.07)), rows = Math.max(1, Math.floor((h - 0.06) / 0.05));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+        clip(-((cols - 1) * 0.07) / 2 + c * 0.07, 0.05 + r * 0.05, 0.012);
+      break;
+    }
+    case 'accKeys': {
+      cyl(w / 2, w / 2, 0.015, m, 0, 0.0075, 0, 24);
+      cyl(0.006, 0.006, h, m, 0, h / 2, 0, 8);
+      const levels = [h - 0.02, h * 0.68, h * 0.42];
+      levels.forEach((y, li) => {
+        for (let k = 0; k < 4; k++) {
+          const a = k * Math.PI / 2 + li * Math.PI / 4, L = w / 2 - 0.01;
+          const arm = cyl(0.0025, 0.0025, L, m, Math.cos(a) * L / 2, y, Math.sin(a) * L / 2, 6);
+          arm.rotation.z = Math.PI / 2; arm.rotation.y = -a;
+          keychain(Math.cos(a) * L, y, Math.sin(a) * L);
+        }
+      });
+      break;
+    }
     case 'gate': {
       for (const sx of [-1, 1]) box(0.04, h, Math.max(d, 0.04), m, sx * (w / 2 - 0.02), h / 2, 0);
       box(w - 0.08, 0.04, 0.03, m, 0, h - 0.06, 0); box(w - 0.08, 0.04, 0.03, m, 0, 0.12, 0);
@@ -983,7 +1049,7 @@ function buildItem(it) {
     }
   }
   bags.visible = state.opts.bags;
-  g.userData = { itemId: it.id, bags: nBags, bagTop, bagGroup: bags };
+  g.userData = { itemId: it.id, bags: nBags, acc: nAcc, bagTop, bagGroup: bags };
   g.traverse(o => { if (o.isMesh && it.type !== 'rug') o.castShadow = true; });
   return g;
 }
@@ -1001,7 +1067,7 @@ function rebuildItem(it) {
   if (old) { itemsGroup.remove(old); disposeObj(old); }
   const g = buildItem(it);
   objById.set(it.id, g);
-  statsById.set(it.id, { bags: g.userData.bags, bagTop: g.userData.bagTop });
+  statsById.set(it.id, { bags: g.userData.bags, acc: g.userData.acc, bagTop: g.userData.bagTop });
   itemsGroup.add(g);
   placeObj(it);
   if (it.id === selectedId) decorateSelection();
@@ -1333,12 +1399,12 @@ function computeChecks() {
   }
   if (area > 6.0001) issues.push(['bad', `Surface ${fmt(area)} m² : au-delà des 6 m² loués`]);
   if (facade.length) issues.push(['warn', `Mur de sacs sur la vitrine : faire valider sa hauteur (${fmt(state.env.wallLimit)} m) par la galerie`]);
-  let bags = 0, budget = 0, foot = 0;
+  let bags = 0, acc = 0, budget = 0, foot = 0;
   for (const it of real) {
-    const st = statsById.get(it.id); bags += st ? st.bags : 0; budget += +it.price || 0;
+    const st = statsById.get(it.id); bags += st ? st.bags : 0; acc += st ? st.acc || 0 : 0; budget += +it.price || 0;
     if (!isFacade(it) && it.type !== 'rug' && it.elev < 1) foot += (it.w * it.d) / 10000;
   }
-  return { area, maxH, maxItem, passage, issues, bags, budget, occupancy: Math.min(100, foot / area * 100) };
+  return { area, maxH, maxItem, passage, issues, bags, acc, budget, occupancy: Math.min(100, foot / area * 100) };
 }
 let checkTimer = 0;
 function scheduleChecks() { if (checkTimer) return; checkTimer = requestAnimationFrame(() => { checkTimer = 0; renderChecks(); }); }
@@ -1354,7 +1420,7 @@ function renderChecks() {
       ${kpi('Surface', `${fmt(c.area)} m²`, c.area > 6.0001 ? 'bad' : 'ok')}
       ${kpi('Hauteur max', `${Math.round(c.maxH)} cm`, hOk ? 'ok' : 'bad')}
       ${kpi('Passage', `${fmt(c.passage)} m`, pOk ? 'ok' : 'bad')}
-      ${kpi('Sacs exposés', `${c.bags}`, '')}
+      ${kpi('Sacs · petits articles', `${c.bags} · ${c.acc}`, '')}
       ${kpi('Budget meubles', `≈ ${Math.round(c.budget)} €`, '')}
       ${kpi('Sol occupé', `${Math.round(c.occupancy)} %`, c.occupancy > 65 ? 'warn' : '')}
     </div>
@@ -1371,7 +1437,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => setTab(
 
 function renderAddPane() {
   const groups = {};
-  for (const g of ['Meubles de base', 'Présentoirs à sacs', 'Mobilier', 'Déco', 'Repères d’échelle']) groups[g] = [];
+  for (const g of ['Meubles de base', 'Présentoirs à sacs', 'Petits articles (panier moyen)', 'Mobilier', 'Déco', 'Repères d’échelle']) groups[g] = [];
   for (const [k, c] of Object.entries(CATALOG)) if (!c.hidden) (groups[c.group] = groups[c.group] || []).push([k, c]);
   $('#paneAdd').innerHTML = `<p class="lead">Touchez un meuble pour l’ajouter au stand, puis glissez-le dans la 3D. Les cotes sont des tailles standard, modifiables ensuite dans l’onglet Objet.</p>` +
     Object.entries(groups).map(([g, arr]) => `<div class="group"><h3>${esc(g)}</h3><div class="cat">${arr.map(([k, c]) => {
@@ -1546,7 +1612,7 @@ function crates(S, sx, sz, rot, layers, over = {}) { const a = []; for (let i = 
 const PRESETS = [
   {
     key: 'carre', name: 'Carré 360° · vendeurs au centre',
-    desc: 'Les clientes font le tour sans entrer : étagères tournées vers l’extérieur sur les 4 côtés, caisse en façade. Vous deux êtes au centre, avec un portillon pour entrer.',
+    desc: 'Les clientes font le tour sans entrer : étagères tournées vers l’extérieur sur les 4 côtés, petits articles sur le dessus et à la caisse. Vous deux êtes au centre, avec un portillon.',
     stand: { w: 3, d: 2, x: 0, passage: 1.8 },
     items: (S) => [
       S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
@@ -1561,6 +1627,12 @@ const PRESETS = [
       // côté allée : étagère + comptoir caisse
       S('kallax', -0.75, 1.805, 0, { color: 'creme', params: { cols: 4, rows: 3 } }),
       S('counter', 0.75, 1.775, 0, { w: 147, d: 45 }),
+      // petits articles sur le dessus des étagères (achats d'impulsion)
+      S('accTray', -1.2, 0.195, 180), S('accKeys', -0.75, 0.195, 180), S('accTray', -0.3, 0.195, 180),
+      S('accRiser', 0.3, 0.195, 180), S('accClips', 0.75, 0.195, 180), S('accRiser', 1.2, 0.195, 180),
+      S('accTray', -1.305, 0.65, -90), S('accKeys', -1.305, 0.98, -90), S('accClips', -1.305, 1.3, -90),
+      S('accRiser', -1.2, 1.805, 0), S('accClips', -0.75, 1.805, 0), S('accTray', -0.3, 1.805, 0),
+      S('accKeys', 0.75, 1.82, 0, { name: 'Arbre porte-clés (à la caisse)' }),
       // à l'intérieur : réserve et vous deux
       S('storage', 0, 0.6, 0, { w: 80, d: 40, h: 80, name: 'Réserve (stock)' }),
       S('person', -0.45, 1.15, 0, { name: 'Vendeur 1 (repère)' }),
