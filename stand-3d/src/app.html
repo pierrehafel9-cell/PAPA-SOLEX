@@ -312,6 +312,7 @@ const CATALOG = {
   console: { name: 'Console', group: 'Mobilier', w: 110, d: 38, h: 80, color: 'noir', price: 40, desc: 'Plateau + tablette basse' },
   table: { name: 'Guéridon rond', group: 'Mobilier', w: 60, d: 60, h: 70, color: 'dore', price: 30, desc: 'Ø 60 cm' },
   storage: { name: 'Caisson de stock fermé', group: 'Mobilier', w: 80, d: 40, h: 80, color: 'creme', price: 40, desc: 'Réserve cachée · empilable' },
+  gate: { name: 'Portillon vendeurs', group: 'Mobilier', w: 60, d: 5, h: 90, color: 'bois', price: 25, desc: 'Accès réservé aux vendeurs, avec loquet' },
   mirror: { name: 'Miroir sur pied', group: 'Mobilier', w: 45, d: 40, h: 150, color: 'dore', price: 35, desc: 'Indispensable pour essayer' },
   panel: { name: 'Panneau plein / enseigne', group: 'Mobilier', w: 120, d: 30, h: 150, color: 'noir', price: 35, params: { logo: true, moulures: false }, schema: [P.logo, P.moulures], desc: 'Ferme un côté, porte le logo' },
   rug: { name: 'Tapis', group: 'Déco', w: 280, d: 180, h: 1, color: 'creme', price: 40, desc: 'Délimite le stand' },
@@ -650,14 +651,17 @@ function buildStand() {
   const zone = plane(s.w, s.d, new THREE.MeshBasicMaterial({ color: '#6d2131', transparent: true, opacity: 0.07, depthWrite: false }));
   zone.rotation.x = -Math.PI / 2; zone.position.set(cx, 0.003, cz); standGroup.add(zone);
   standGroup.add(dashedRect(R.x0, R.z0, R.x1, R.z1, 0.006, '#6d2131'));
-  // Passage chariots (entre la vitrine et le stand)
+  // Passage chariots (entre le mur de sacs / la vitrine et le stand)
+  let f0 = 0;
+  for (const it of state.items) if (isFacade(it)) { const b = bounds(it); if (b.x1 > R.x0 && b.x0 < R.x1) f0 = Math.max(f0, b.z1); }
+  const pl = Math.max(s.passage - f0, 0.01);
   const pw = s.w + 1.2;
-  const pt = stripesTex.clone(); pt.needsUpdate = true; pt.repeat.set(pw / 0.5, Math.max(s.passage, 0.1) / 0.5);
-  const pas = plane(pw, Math.max(s.passage, 0.01), new THREE.MeshBasicMaterial({ map: pt, transparent: true, opacity: 0.6, depthWrite: false }));
+  const pt = stripesTex.clone(); pt.needsUpdate = true; pt.repeat.set(pw / 0.5, Math.max(pl, 0.1) / 0.5);
+  const pas = plane(pw, pl, new THREE.MeshBasicMaterial({ map: pt, transparent: true, opacity: 0.6, depthWrite: false }));
   pas.material.userData.own = true;
-  pas.rotation.x = -Math.PI / 2; pas.position.set(cx, 0.004, s.passage / 2); standGroup.add(pas);
-  const lp = makeLabel(`Passage chariots ${fmt(s.passage)} m`, { fg: '#6b4300', bg: 'rgba(255,246,228,0.92)', size: 0.15, onTop: false });
-  lp.position.set(cx - s.w / 2 - 0.1, 0.12, s.passage / 2); lp.center.set(1, 0.5); standGroup.add(lp);
+  pas.rotation.x = -Math.PI / 2; pas.position.set(cx, 0.004, f0 + pl / 2); standGroup.add(pas);
+  const lp = makeLabel(`Passage chariots ${fmt(pl)} m`, { fg: '#6b4300', bg: 'rgba(255,246,228,0.92)', size: 0.15, onTop: false });
+  lp.position.set(cx - s.w / 2 - 0.1, 0.12, f0 + pl / 2); lp.center.set(1, 0.5); standGroup.add(lp);
   const lw = makeLabel(`${fmt(s.w)} m`, { size: 0.15, onTop: false }); lw.position.set(cx, 0.1, R.z1 + 0.18); standGroup.add(lw);
   const ld = makeLabel(`${fmt(s.d)} m`, { size: 0.15, onTop: false }); ld.position.set(R.x1 + 0.12, 0.1, cz); ld.center.set(0, 0.5); standGroup.add(ld);
   // Limite de hauteur
@@ -913,6 +917,14 @@ function buildItem(it) {
       cyl(0.025, 0.025, h - 0.03, m, 0, (h - 0.03) / 2, 0, 12);
       cyl(w / 4, w / 4 + 0.01, 0.02, m, 0, 0.01, 0, 28);
       if (w >= 0.7) { addBag(-0.16, h, 0, 1, 0.3); addBag(0.16, h, 0.02, 0.9, -0.3); } else addBag(0, h, 0, Math.min(1, w / 0.4));
+      break;
+    }
+    case 'gate': {
+      for (const sx of [-1, 1]) box(0.04, h, Math.max(d, 0.04), m, sx * (w / 2 - 0.02), h / 2, 0);
+      box(w - 0.08, 0.04, 0.03, m, 0, h - 0.06, 0); box(w - 0.08, 0.04, 0.03, m, 0, 0.12, 0);
+      const n = Math.max(2, Math.round((w - 0.08) / 0.09));
+      for (let i = 0; i < n; i++) box(0.025, h - 0.22, 0.02, m, -(w - 0.08) / 2 + (i + 0.5) * (w - 0.08) / n, h / 2 + 0.03, 0);
+      box(0.05, 0.03, 0.04, mat('dore'), w / 2 - 0.06, h * 0.62, 0.03);
       break;
     }
     case 'mirror': {
@@ -1340,7 +1352,7 @@ function renderChecks() {
     </div>
     ${c.issues.length ? `<ul class="issues">${c.issues.map(i => `<li class="${i[0]}">${esc(i[1])}</li>`).join('')}</ul>` : `<ul class="issues"><li class="ok">Tout est conforme : hauteur, passage et surface.</li></ul>`}`;
 }
-function refresh() { renderChecks(); renderList(); }
+function refresh() { buildStand(); renderChecks(); renderList(); }
 
 /* ---------- Panneaux ---------- */
 function setTab(t) {
@@ -1524,6 +1536,29 @@ function renderStandPane() {
 /* ---------- Modèles prêts à l’emploi ---------- */
 function crates(S, sx, sz, rot, layers, over = {}) { const a = []; for (let i = 0; i < layers; i++) a.push(S('crate', sx, sz, rot, over)); return a; }
 const PRESETS = [
+  {
+    key: 'carre', name: 'Carré 360° · vendeurs au centre',
+    desc: 'Les clientes font le tour sans entrer : étagères tournées vers l’extérieur sur les 4 côtés, caisse en façade. Vous deux êtes au centre, avec un portillon pour entrer.',
+    stand: { w: 3, d: 2, x: 0, passage: 1.8 },
+    items: (S) => [
+      S('rug', 0, 1.0, 0, { w: 290, d: 190, color: 'taupe' }),
+      // côté passage chariots : étagères tournées vers le mur de sacs
+      S('kallax', -0.75, 0.195, 180, { color: 'creme', params: { cols: 4, rows: 3 } }),
+      S('kallax', 0.75, 0.195, 180, { color: 'creme', params: { cols: 4, rows: 3 } }),
+      // côté Mister Minit
+      S('kallax', -1.305, 0.975, -90, { color: 'creme', params: { cols: 3, rows: 3 } }),
+      // côté Jeff de Bruges : miroir + portillon vendeurs
+      S('mirror', 1.3, 0.62, 90),
+      S('gate', 1.475, 1.25, 90),
+      // côté allée : étagère + comptoir caisse
+      S('kallax', -0.75, 1.805, 0, { color: 'creme', params: { cols: 4, rows: 3 } }),
+      S('counter', 0.75, 1.775, 0, { w: 147, d: 45 }),
+      // à l'intérieur : réserve et vous deux
+      S('storage', 0, 0.6, 0, { w: 80, d: 40, h: 80, name: 'Réserve (stock)' }),
+      S('person', -0.45, 1.15, 0, { name: 'Vendeur 1 (repère)' }),
+      S('person', 0.35, 1.15, 0, { name: 'Vendeur 2 (repère)' }),
+    ],
+  },
   {
     key: 'u', name: 'Îlot en U · mur de sacs, penderie, caisses',
     desc: 'Conseillé : le grand mur de sacs remplace la bâche, et l’îlot en U n’a qu’une entrée côté allée, caisse devant.',
@@ -1738,8 +1773,8 @@ async function start() {
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (_) { }
   resize();
   buildEnv();
-  if (saved && saved.items) { try { loadData(saved); } catch (_) { applyPreset('u'); } }
-  else applyPreset('u');
+  if (saved && saved.items) { try { loadData(saved); } catch (_) { applyPreset('carre'); } }
+  else applyPreset('carre');
   renderStandPane();
   setView('3d', true);
   $('#loading').hidden = true;
