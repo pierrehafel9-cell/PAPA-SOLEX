@@ -157,6 +157,11 @@ textarea { font-family: var(--f-mono); font-size: 11.5px; min-height: 80px; resi
 .vbar { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 4px; pointer-events: none; }
 .vbar button { pointer-events: auto; border: 0; border-radius: 999px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,.88); color: #2a211d; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 .vbar button[aria-pressed="true"] { background: #6d2131; color: #fff; }
+.vbar .undo { margin-left: auto; display: flex; gap: 4px; }
+.vbar button:disabled { opacity: .45; cursor: default; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 58px; display: flex; gap: 10px; align-items: center; background: rgba(42,33,29,.94); color: #fff; padding: 8px 8px 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.25); max-width: calc(100% - 24px); z-index: 5; }
+.toast:not(:has(button)) { padding-right: 14px; }
+.toast button { border: 0; border-radius: 999px; padding: 5px 12px; font-weight: 700; font-size: 12.5px; background: #fff; color: #6d2131; }
 .selbar { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; pointer-events: none; }
 .selbar > * { pointer-events: auto; }
 .selbar .nm { background: rgba(42,33,29,.88); color: #fff; padding: 6px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -183,7 +188,12 @@ textarea { font-family: var(--f-mono); font-size: 11.5px; min-height: 80px; resi
       <button type="button" data-view="client" aria-pressed="false">Vue cliente</button>
       <button type="button" data-view="carrefour" aria-pressed="false">Depuis Carrefour</button>
       <button type="button" data-view="passage" aria-pressed="false">Passage chariots</button>
+      <span class="undo">
+        <button type="button" id="bUndo" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button>
+        <button type="button" id="bRedo" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button>
+      </span>
     </div>
+    <div class="toast" id="toast" role="status" hidden></div>
     <p class="hint" id="hint">Glissez un meuble pour le déplacer · glissez le vide pour tourner · molette ou pincement pour zoomer</p>
     <div class="selbar" id="selbar" hidden>
       <span class="nm" id="selName"></span>
@@ -1115,7 +1125,7 @@ let tween = null;
 function standCenter() { const s = state.stand; return new THREE.Vector3(s.x, 0, s.passage + s.d / 2); }
 function setView(v, instant = false) {
   viewMode = v;
-  document.querySelectorAll('.vbar button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+  document.querySelectorAll('.vbar button[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
   const c = standCenter(), s = state.stand;
   for (const [, g] of objById) g.traverse(o => { if (o.userData.planLabel) o.visible = v === 'plan' && !o.userData.hideInPlan; });
   if (v === 'plan') {
@@ -1260,6 +1270,12 @@ canvas.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); en
 window.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (['input', 'textarea', 'select'].includes(tag)) return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && (k === 'z' || k === 'y')) {
+    e.preventDefault();
+    if (k === 'y' || e.shiftKey) redo(); else undo();
+    return;
+  }
   const it = getSel(); if (!it) return;
   const step = e.shiftKey ? 0.1 : 0.01;
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeItem(it.id); }
@@ -1279,6 +1295,7 @@ function select(id, { fromView = false } = {}) {
   const it = getSel();
   $('#selbar').hidden = !it;
   $('#hint').hidden = !!it;
+  $('#toast').style.bottom = it ? '58px' : '48px';
   if (it) $('#selName').textContent = `${it.name} · ${Math.round(it.w)}×${Math.round(it.d)}×${Math.round(it.h)}`;
   if (it && fromView) setTab('item');
   renderItemPane();
@@ -1311,6 +1328,8 @@ function addFromCatalog(type) {
   refresh(); save();
 }
 function removeItem(id) {
+  const gone = state.items.find(i => i.id === id);
+  if (gone) setTimeout(() => toast(`${gone.name} supprimé`, 'Annuler', undo), 0);
   const g = objById.get(id);
   if (g) { itemsGroup.remove(g); disposeObj(g); objById.delete(id); statsById.delete(id); }
   state.items = state.items.filter(i => i.id !== id);
@@ -1343,7 +1362,9 @@ $('#sbRotL').onclick = () => rotateSel(15);
 $('#sbDup').onclick = duplicateSel;
 $('#sbDel').onclick = () => { const it = getSel(); if (it) removeItem(it.id); };
 $('#sbClose').onclick = () => select(null);
-document.querySelectorAll('.vbar button').forEach(b => b.onclick = () => setView(b.dataset.view));
+document.querySelectorAll('.vbar button[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+$('#bUndo').onclick = undo;
+$('#bRedo').onclick = redo;
 
 /* ---------- Contrôles et chiffres ---------- */
 function computeChecks() {
@@ -1805,16 +1826,80 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#mo
 /* ---------- Sauvegarde ---------- */
 function serialize() { return { v: 2, stand: state.stand, env: state.env, opts: state.opts, items: state.items }; }
 let saveTimer = 0;
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); } catch (_) { } }, 250); }
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flushSave, 250); updateUndoButtons(); }
+function flushSave() {
+  clearTimeout(saveTimer); saveTimer = 0;
+  commitHistory();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); } catch (_) { }
+}
+
+/* ---------- Annuler / rétablir (Ctrl+Z / Ctrl+Y) ---------- */
+const undoStack = [], redoStack = [];
+let lastSnap = null;
+const snapNow = () => JSON.stringify({ stand: state.stand, env: state.env, items: state.items });
+function commitHistory() {
+  const snap = snapNow();
+  if (lastSnap !== null && snap !== lastSnap) {
+    undoStack.push(lastSnap);
+    if (undoStack.length > 150) undoStack.shift();
+    redoStack.length = 0;
+  }
+  lastSnap = snap;
+  updateUndoButtons();
+}
+function resetHistory() { undoStack.length = 0; redoStack.length = 0; lastSnap = snapNow(); updateUndoButtons(); }
+function restoreSnap(snap) {
+  const d = JSON.parse(snap);
+  const envChanged = JSON.stringify(d.env) !== JSON.stringify(state.env);
+  state.stand = d.stand; state.env = d.env;
+  state.items = d.items;
+  nextId = Math.max(nextId, ...state.items.map(i => i.id + 1), 1);
+  if (envChanged) buildEnv();
+  rebuildAll();
+  select(state.items.some(i => i.id === selectedId) ? selectedId : null);
+  refresh(); renderStandPane();
+  lastSnap = snap;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(serialize())); } catch (_) { }
+  updateUndoButtons();
+}
+function undo() {
+  if (saveTimer) flushSave();
+  if (!undoStack.length) { toast('Rien à annuler'); return; }
+  redoStack.push(lastSnap);
+  restoreSnap(undoStack.pop());
+  toast('Action annulée', 'Rétablir', redo);
+}
+function redo() {
+  if (saveTimer) flushSave();
+  if (!redoStack.length) { toast('Rien à rétablir'); return; }
+  undoStack.push(lastSnap);
+  restoreSnap(redoStack.pop());
+  toast('Action rétablie');
+}
+function updateUndoButtons() {
+  const u = $('#bUndo'), r = $('#bRedo');
+  if (u) u.disabled = !undoStack.length && !saveTimer;
+  if (r) r.disabled = !redoStack.length;
+}
+let toastTimer = 0;
+function toast(msg, actionLabel, action) {
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>${actionLabel ? `<button type="button">${esc(actionLabel)}</button>` : ''}`;
+  if (actionLabel) t.querySelector('button').onclick = () => { t.hidden = true; action(); };
+  t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 5000);
+}
 function loadData(d) {
   if (!d || !Array.isArray(d.items)) throw new Error('format');
   const base = DEFAULT_STATE();
   state = { stand: Object.assign(base.stand, d.stand), env: Object.assign(base.env, d.env), opts: Object.assign(base.opts, d.opts), items: [] };
-  nextId = 1;
+  nextId = Math.max(1, ...d.items.map(r => (+r.id || 0) + 1));
+  const seen = new Set();
   for (const raw of d.items) {
     if (!CATALOG[raw.type]) continue;
     const it = makeItem(raw.type, raw);
-    it.id = nextId++;
+    it.id = raw.id && !seen.has(raw.id) ? raw.id : nextId++;
+    seen.add(it.id);
     state.items.push(it);
   }
   selectedId = null;
@@ -1849,6 +1934,7 @@ async function start() {
   else applyPreset('carre');
   renderStandPane();
   setView('3d', true);
+  flushSave(); resetHistory();
   $('#loading').hidden = true;
   requestAnimationFrame(loop);
 }
