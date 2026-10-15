@@ -289,6 +289,7 @@ const PALETTE = {
   chocolat: { label: 'Chocolat', color: '#4b3326' },
   bordeaux: { label: 'Bordeaux', color: '#5f1f2b' },
   noir: { label: 'Noir mat', color: '#262221' },
+  sapin: { label: 'Vert sapin satiné', color: '#14291f', satin: true },
   dore: { label: 'Laiton doré', color: '#c9a254', metal: true },
 };
 const BAG_COLORS = ['#1f1b19', '#4c2d21', '#a9713f', '#8d7c6c', '#5d1f27', '#e2d4c0', '#6c4b36', '#2f2a33'];
@@ -561,10 +562,10 @@ function mat(key, opts = {}) {
   if (opts.shade) col.lerp(new THREE.Color('#000000'), opts.shade);
   const m = new THREE.MeshStandardMaterial({
     color: col,
-    roughness: p.metal ? 0.32 : (p.wood ? 0.7 : 0.82),
+    roughness: p.metal ? 0.32 : (p.wood ? 0.7 : (p.satin ? 0.5 : 0.82)),
     metalness: p.metal ? 0.85 : 0,
     map: p.wood ? woodTex : null,
-    envMapIntensity: p.metal ? 1.0 : 0.35,
+    envMapIntensity: p.metal ? 1.0 : (p.satin ? 0.18 : 0.35),
   });
   matCache.set(id, m);
   return m;
@@ -1759,7 +1760,7 @@ function applyPreset(key) {
   const S = (type, sx, sz, rot, over = {}) => makeItem(type, Object.assign({}, over, { x: st.x + sx, z: st.passage + sz, rot }));
   const F = (type, x, z, rot, over = {}) => makeItem(type, Object.assign({}, over, { x, z, rot }));
   // le mur de sacs remplace la bâche bleue de la vitrine
-  state.items.push(F('wall', 0, 0.15, 0, { w: Math.round(state.env.banner * 100), h: Math.round(state.env.wallLimit * 100), color: p.wallColor || 'noir', name: 'Mur de sacs (à la place de la bâche)', params: { faces: 1, rows: 5, spacing: 34, moulures: !!p.wallMoulures } }));
+  state.items.push(F('wall', 0, 0.15, 0, { w: Math.round(state.env.banner * 100), h: Math.round(state.env.wallLimit * 100), color: p.wallColor || 'sapin', name: 'Mur de sacs (à la place de la bâche)', params: { faces: 1, rows: 5, spacing: 34, moulures: !!p.wallMoulures } }));
   for (const it of p.items(S, F)) { state.items.push(it); settle(it); }
   const facadeFront = Math.max(0, ...state.items.filter(isFacade).map(i => bounds(i).z1));
   state.items.push(makeItem('cart', { x: st.x + 0.9, z: facadeFront + (st.passage - facadeFront) / 2, rot: 90 }));
